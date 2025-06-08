@@ -4,6 +4,8 @@
 
 The Legacy Analysis System is a modular, extensible architecture designed for comprehensive data analysis and modeling. It combines the simplicity of a streamlined design with the power of advanced analytical capabilities, focusing on reimbursement data analysis and pattern discovery.
 
+The system implements the legacy reimbursement formula: **Reimb = Days × 100 + Miles × 0.5 + Receipts**
+
 ## Design Principles
 
 ### 1. **Modular Architecture**

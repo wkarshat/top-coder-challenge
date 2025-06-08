@@ -180,4 +180,14 @@ Check `outputs/logs/analysis.log` for detailed execution information and error m
 - Legacy shell scripts: Not used by current system
 - Scattered output files: Now organized in timestamped directories
 
-This system provides comprehensive data analysis capabilities with clean organization and flexible execution options. 
+This system provides comprehensive data analysis capabilities with clean organization and flexible execution options.
+
+## Legacy Reimbursement Formula
+
+The system implements the legacy reimbursement calculation:
+**Reimb = Days × 100 + Miles × 0.5 + Receipts**
+
+Where:
+- **Days**: Trip duration (1-30 days)
+- **Miles**: Total miles traveled
+- **Receipts**: Total receipt amount in dollars 

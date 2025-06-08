@@ -14,7 +14,7 @@ Still, the system is relied upon by Finance and HR. Replacing it is risky—but 
 
 Employees use a legacy interface to submit:
 
-- The number of days spent traveling
+- The number of days spent traveling (1-30 days)
 - The total number of miles traveled
 - The total dollar amount of submitted receipts
 

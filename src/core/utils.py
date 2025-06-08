@@ -32,7 +32,7 @@ def load_config(config_path: str) -> Dict[str, Any]:
         raise FileNotFoundError(f"Configuration file not found: {config_path}")
     
     try:
-        with open(config_file, 'r', encoding='utf-8') as f:
+        with open(config_file, 'r', encoding='utf-8', newline='\n') as f:
             if config_file.suffix.lower() in ['.yaml', '.yml']:
                 return yaml.safe_load(f) or {}
             elif config_file.suffix.lower() == '.json':
@@ -109,7 +109,7 @@ def setup_logging(logging_config: Dict[str, Any]) -> None:
     # File handler if specified
     if log_file:
         ensure_directories([str(Path(log_file).parent)])
-        file_handler = logging.FileHandler(log_file)
+        file_handler = logging.FileHandler(log_file, encoding='utf-8')
         file_handler.setLevel(numeric_level)
         file_handler.setFormatter(logging.Formatter(format_str))
         handlers.append(file_handler)
@@ -363,10 +363,10 @@ def save_results(results: Dict[str, Any], output_path: str) -> None:
     ensure_directories([str(output_file.parent)])
     
     if output_file.suffix.lower() == '.json':
-        with open(output_file, 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8', newline='\n') as f:
             json.dump(results, f, indent=2, default=str)
     elif output_file.suffix.lower() in ['.yaml', '.yml']:
-        with open(output_file, 'w', encoding='utf-8') as f:
+        with open(output_file, 'w', encoding='utf-8', newline='\n') as f:
             yaml.dump(results, f, default_flow_style=False)
     else:
         raise ValueError(f"Unsupported output format: {output_file.suffix}")
@@ -387,7 +387,7 @@ def load_results(input_path: str) -> Dict[str, Any]:
     if not input_file.exists():
         raise FileNotFoundError(f"Results file not found: {input_path}")
     
-    with open(input_file, 'r', encoding='utf-8') as f:
+    with open(input_file, 'r', encoding='utf-8', newline='\n') as f:
         if input_file.suffix.lower() == '.json':
             return json.load(f)
         elif input_file.suffix.lower() in ['.yaml', '.yml']:

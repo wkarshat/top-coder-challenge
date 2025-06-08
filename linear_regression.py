@@ -4,10 +4,12 @@ Enhanced Linear Regression Analysis for Legacy Reimbursement System
 This module applies linear regression to the legacy reimbursement data with 
 enhanced features:
 - Command line options for CSV file selection
-- Analysis by days (1-14) with correlations and regressions
-- Visualization of Miles vs Receipts with Reimb on secondary axis
-- Configurable day ranges
+- Analysis by trip duration (1-30 days) with correlations and regressions
+- Visualization of Miles vs Receipts with Reimb relationships
+- Configurable trip duration ranges
 - Comprehensive data visualization
+
+Note: 'Days' represents trip duration (number of days), not calendar days.
 """
 
 import argparse
@@ -20,11 +22,11 @@ import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from scipy.stats import pearsonr
-
 import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend for faster rendering
 import matplotlib.pyplot as plt
 
+# Configure matplotlib for non-interactive backend
+matplotlib.use('Agg')
 warnings.filterwarnings('ignore')
 
 # Set style for better plots
@@ -38,7 +40,7 @@ def parse_arguments():
     parser.add_argument('--csv', '-c', default='public.csv', 
                         help='Input CSV file name (default: public.csv)')
     parser.add_argument('--days', '-d', default='all',
-                        help='Days to process: "all" (1-14), range "1-5", '
+                        help='Trip durations to process: "all" (1-30), range "1-5", '
                              'or list "1,3,5,7" (default: all)')
     parser.add_argument('--no-plots', action='store_true',
                         help='Skip individual day plots for faster execution')
@@ -56,7 +58,7 @@ def create_output_directory(base_dir='outputs'):
 
 
 def parse_days_argument(days_arg, available_days):
-    """Parse the days argument to return list of days to process."""
+    """Parse the days argument to return list of trip durations to process."""
     if days_arg.lower() == 'all':
         return sorted(available_days)
     
@@ -96,14 +98,14 @@ def load_data(csv_file):
     df = df.dropna(subset=numeric_cols)
     
     print(f"Data shape after cleaning: {df.shape}")
-    print(f"Days range: {df['Days'].min()} to {df['Days'].max()}")
-    print(f"Available days: {sorted(df['Days'].unique())}")
+    print(f"Trip duration range: {df['Days'].min()} to {df['Days'].max()} days")
+    print(f"Available trip durations: {sorted(df['Days'].unique())}")
     
     return df
 
 
 def calculate_correlations_and_regression(df_day):
-    """Calculate correlations and regression for a specific day's data."""
+    """Calculate correlations and regression for a specific trip duration's data."""
     if len(df_day) < 3:  # Need at least 3 points for meaningful analysis
         return None
     
@@ -202,7 +204,7 @@ def calculate_binned_correlations(df_day):
 
 
 def create_day_analysis_plot(df_day, day, analysis_results, output_dir='.'):
-    """Create two separate plots for a specific day's analysis."""
+    """Create two separate plots for a specific trip duration's analysis."""
     plot_files = []
     
     # Plot 1: Miles vs Reimb
@@ -224,7 +226,7 @@ def create_day_analysis_plot(df_day, day, analysis_results, output_dir='.'):
     
     ax1.set_xlabel('Miles')
     ax1.set_ylabel('Reimb')
-    ax1.set_title(f'Day {day}: Miles vs Reimb (n={len(df_day)})')
+    ax1.set_title(f'{day}-Day Trips: Miles vs Reimb (n={len(df_day)})')
     ax1.legend()
     ax1.grid(True, alpha=0.3)
     
@@ -258,7 +260,7 @@ def create_day_analysis_plot(df_day, day, analysis_results, output_dir='.'):
     
     ax2.set_xlabel('Receipts')
     ax2.set_ylabel('Reimb')
-    ax2.set_title(f'Day {day}: Receipts vs Reimb (n={len(df_day)})')
+    ax2.set_title(f'{day}-Day Trips: Receipts vs Reimb (n={len(df_day)})')
     ax2.legend()
     ax2.grid(True, alpha=0.3)
     
@@ -275,22 +277,22 @@ def create_summary_visualization(df, day_results, output_dir='.'):
     """Create simplified summary visualization."""
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 8))
     
-    # 1. Distribution of data by days
+    # 1. Distribution of data by trip duration
     day_counts = df['Days'].value_counts().sort_index()
     ax1.bar(day_counts.index, day_counts.values, alpha=0.7)
-    ax1.set_xlabel('Days')
+    ax1.set_xlabel('Trip Duration (Days)')
     ax1.set_ylabel('Count')
-    ax1.set_title('Data Distribution by Days')
+    ax1.set_title('Data Distribution by Trip Duration')
     
-    # 2. Miles vs Receipts colored by Days
+    # 2. Miles vs Receipts colored by trip duration
     scatter = ax2.scatter(df['Miles'], df['Receipts'], c=df['Days'], 
                          cmap='viridis', alpha=0.6, s=20)
     ax2.set_xlabel('Miles')
     ax2.set_ylabel('Receipts')
-    ax2.set_title('Miles vs Receipts (colored by Days)')
-    plt.colorbar(scatter, ax=ax2, label='Days')
+    ax2.set_title('Miles vs Receipts (colored by Trip Duration)')
+    plt.colorbar(scatter, ax=ax2, label='Trip Duration')
     
-    # 3. R² values by days
+    # 3. R² values by trip duration
     if day_results:
         days_with_results = [day for day, result in day_results.items() 
                            if result is not None]
@@ -306,11 +308,11 @@ def create_summary_visualization(df, day_results, output_dir='.'):
                    label='Miles→Receipts', alpha=0.7)
             ax3.bar(x + width/2, r2_miles_reimb, width, 
                    label='Miles→Reimb', alpha=0.7)
-            ax3.set_xlabel('Days')
+            ax3.set_xlabel('Trip Duration')
             ax3.set_ylabel('R² Score')
-            ax3.set_title('Regression R² by Day')
+            ax3.set_title('Regression R² by Trip Duration')
             ax3.set_xticks(x)
-            ax3.set_xticklabels([f'Day {d}' for d in days_with_results])
+            ax3.set_xticklabels([f'{d}d' for d in days_with_results])
             ax3.legend()
     
     # 4. Box plots by days

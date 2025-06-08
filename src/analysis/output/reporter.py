@@ -50,7 +50,7 @@ class Reporter(IReporter):
         
         # Generate JSON report
         report_file = self.output_dir / 'analysis_report.json'
-        with open(report_file, 'w') as f:
+        with open(report_file, 'w', encoding='utf-8', newline='\n') as f:
             json.dump(report_data, f, indent=2, default=str)
         
         return str(report_file) 

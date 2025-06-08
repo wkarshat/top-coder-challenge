@@ -1,0 +1,27 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+#  Legacy Project Rules
+
+## Code Quality
+- Follow PEP 8 and use type hints
+- Document public functions and classes with docstrings
+- Keep functions focused and small
+
+## Testing
+- Write unit and system tests for new features and bug fixes
+- Use mocks for external dependencies in unit tests
+- Mark tests (`unit`, `integration`, `system`, `security`)
+
+## Security
+- Validate and sanitize user and external inputs
+- Secure password handling
+
+## Documentation
+- Document API endpoints, configuration options, usage examples
+- Maintain changelog for releases and significant changes
+
+## Configuration
+- Use JSON files for configuration and persistent storage

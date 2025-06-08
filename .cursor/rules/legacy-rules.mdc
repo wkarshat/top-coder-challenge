@@ -4,6 +4,7 @@ globs:
 alwaysApply: true
 ---
 #  Legacy Project Rules
+- Skip congratulatory, summary, or non-technical commentary in all assistant responses. Only provide technical, actionable, or directly relevant content.
 
 ## Code Quality
 - Follow PEP 8 and use type hints

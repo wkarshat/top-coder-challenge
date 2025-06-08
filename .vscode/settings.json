@@ -1,0 +1,31 @@
+{
+    "python.linting.enabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.pylintEnabled": false,
+    "python.linting.flake8Args": [
+        "--max-line-length=100",
+        "--ignore=E501,F401,F841,W503,E203,W291,W292,W293,E128,E129,E226,W504,F811,F541"
+    ],
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+        "--line-length=100"
+    ],
+    "python.sortImports.args": [
+        "--profile=black",
+        "--line-length=100"
+    ],
+    "editor.rulers": [100],
+    "python.analysis.ignore": [
+        "**/__pycache__",
+        "**/venv",
+        "**/.venv"
+    ],
+    "python.analysis.autoImportCompletions": true,
+    "python.analysis.diagnosticMode": "workspace",
+    "files.exclude": {
+        "**/__pycache__": true,
+        "**/*.pyc": true,
+        "**/venv": true,
+        "**/.venv": true
+    }
+} 

@@ -1,0 +1,13 @@
+Technique,Complexity,Performance,Fit to Data/Size,Relevance to Req.,Success Likelihood,Combined Rating,Pros,Cons
+Decision Trees / Rule Extraction,6,9,10,10,10,9.0,"Handles rules, thresholds, non-linear breaks; interpretable","Prone to overfitting, sometimes less smooth than needed"
+Manual Rule Mining,4,8,10,10,9,8.2,"Finds subtle bugs/quirks, full control, perfect mimicry","Labor-intensive, not scalable, subjective"
+Piecewise/Segmented Regression,8,7,9,9,8,8.2,"Captures non-linearities, tiered formulas, abrupt bonuses","Needs breakpoint tuning, sometimes fiddly edge cases"
+Random Forests / Boosted Trees,7,7,9,7,7,7.4,"Models complex, non-linear rules, robust to noise","Less transparent logic, may miss rare quirks"
+Symbolic Regression,9,5,7,8,7,7.2,"Can 'invent' strange formulas, fits odd math patterns","Slow, unpredictable, solutions can be unreadable"
+Exploratory Data Analysis (EDA),2,10,10,6,6,6.8,"Fast, visual, generates insight/hypotheses",Not a modeling method; can't replicate logic itself
+Residual Analysis,3,9,8,6,6,6.4,"Good for error diagnosis, discovers outliers",Relies on other models to start
+Polynomial Regression,5,8,7,5,5,6.0,Flexible for smooth curves,"Poor at abrupt breaks, not robust to outliers"
+Clustering / Outlier Analysis,4,8,7,4,5,5.6,Finds 'regimes' or odd cases,"No output logic, just suggests groupings"
+GAMs,8,7,6,4,4,5.8,Captures smooth nonlinearities,"Misses sharp rules, tricky for bonuses/caps"
+Linear Regression,2,10,8,2,2,4.8,"Simple, fast, interpretable","Cannot handle quirks, bonuses, non-linear effects"
+Neural Networks,9,3,4,2,2,4.0,Powerful in theory,"Overkill, black box, uninterpretable, data-hungry"

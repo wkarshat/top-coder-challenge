@@ -1,0 +1,44 @@
+# Core System Configuration
+
+# Data Processing
+data:
+  input_formats: [csv, json, excel]
+  validation:
+    strict_mode: true
+    handle_missing: drop
+    outlier_detection: iqr
+
+# Logging
+logging:
+  level: INFO
+  format: "%(asctime)s - %(levelname)s - %(message)s"
+  file: outputs/logs/analysis.log
+
+# Performance
+performance:
+  parallel_processing: true
+  max_workers: 4
+  memory_limit_mb: 2048
+
+# Environment-specific settings
+environment:
+  development:
+    logging:
+      level: DEBUG
+  production:
+    logging:
+      level: WARNING
+    performance:
+      max_workers: 8
+
+# Security
+security:
+  input_validation: strict
+  max_file_size_mb: 100
+  allowed_extensions: [csv, json, xlsx]
+
+# Reporting
+reporting:
+  output_dir: outputs/reports
+  formats: [html, pdf]
+  include_plots: true 

@@ -10,16 +10,21 @@ enhanced features:
 - Comprehensive data visualization
 """
 
-import pandas as pd
-import matplotlib
-matplotlib.use('Agg')  # Use non-interactive backend for faster rendering
-import matplotlib.pyplot as plt
-import numpy as np
 import argparse
+import warnings
+from datetime import datetime
+from pathlib import Path
+
+import pandas as pd
+import numpy as np
 from sklearn.linear_model import LinearRegression
 from sklearn.metrics import r2_score
 from scipy.stats import pearsonr
-import warnings
+
+import matplotlib
+matplotlib.use('Agg')  # Use non-interactive backend for faster rendering
+import matplotlib.pyplot as plt
+
 warnings.filterwarnings('ignore')
 
 # Set style for better plots
@@ -37,7 +42,17 @@ def parse_arguments():
                              'or list "1,3,5,7" (default: all)')
     parser.add_argument('--no-plots', action='store_true',
                         help='Skip individual day plots for faster execution')
+    parser.add_argument('--output-dir', default=None,
+                        help='Output directory (default: auto-generated timestamped)')
     return parser.parse_args()
+
+
+def create_output_directory(base_dir='outputs'):
+    """Create timestamped output directory for linear regression analysis."""
+    timestamp = datetime.now().strftime('%H%M%S')
+    output_dir = Path(f"{base_dir}/linear_regression_{timestamp}")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    return str(output_dir)
 
 
 def parse_days_argument(days_arg, available_days):
@@ -186,7 +201,7 @@ def calculate_binned_correlations(df_day):
     return binned_results
 
 
-def create_day_analysis_plot(df_day, day, analysis_results):
+def create_day_analysis_plot(df_day, day, analysis_results, output_dir='.'):
     """Create two separate plots for a specific day's analysis."""
     plot_files = []
     
@@ -214,10 +229,10 @@ def create_day_analysis_plot(df_day, day, analysis_results):
     ax1.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plot1_file = f'day_{day}_miles_vs_reimb.png'
+    plot1_file = Path(output_dir) / f'day_{day}_miles_vs_reimb.png'
     plt.savefig(plot1_file, dpi=100, bbox_inches='tight')
     plt.close()
-    plot_files.append(plot1_file)
+    plot_files.append(str(plot1_file))
     
     # Plot 2: Receipts vs Reimb
     fig2, ax2 = plt.subplots(1, 1, figsize=(10, 6))
@@ -248,15 +263,15 @@ def create_day_analysis_plot(df_day, day, analysis_results):
     ax2.grid(True, alpha=0.3)
     
     plt.tight_layout()
-    plot2_file = f'day_{day}_receipts_vs_reimb.png'
+    plot2_file = Path(output_dir) / f'day_{day}_receipts_vs_reimb.png'
     plt.savefig(plot2_file, dpi=100, bbox_inches='tight')
     plt.close()
-    plot_files.append(plot2_file)
+    plot_files.append(str(plot2_file))
     
     return plot_files
 
 
-def create_summary_visualization(df, day_results):
+def create_summary_visualization(df, day_results, output_dir='.'):
     """Create simplified summary visualization."""
     fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2, figsize=(12, 8))
     
@@ -308,9 +323,10 @@ def create_summary_visualization(df, day_results):
     ax4.set_title('Reimb Distribution by Days')
     
     plt.tight_layout()
-    plt.savefig('summary_analysis.png', dpi=100, bbox_inches='tight')
+    summary_file = Path(output_dir) / 'summary_analysis.png'
+    plt.savefig(summary_file, dpi=100, bbox_inches='tight')
     plt.close()  # Close to free memory
-    return 'summary_analysis.png'
+    return str(summary_file)
 
 
 def print_day_binned_analysis(day, df_day, analysis_results):
@@ -399,6 +415,15 @@ def main():
     print("Enhanced Linear Regression Analysis")
     print("=" * 50)
     
+    # Create output directory
+    if args.output_dir:
+        output_dir = args.output_dir
+        Path(output_dir).mkdir(parents=True, exist_ok=True)
+    else:
+        output_dir = create_output_directory()
+    
+    print(f"Output directory: {output_dir}")
+    
     # Load data
     df = load_data(args.csv)
     
@@ -441,9 +466,9 @@ def main():
         
         # Create plots for this day (if not skipped)
         if not args.no_plots:
-            plot_files = create_day_analysis_plot(df_day, day, analysis_results)
+            plot_files = create_day_analysis_plot(df_day, day, analysis_results, output_dir)
             all_plot_files.extend(plot_files)
-            print(f"  Plots saved: {', '.join(plot_files)}")
+            print(f"  Plots saved: {', '.join([Path(f).name for f in plot_files])}")
         
         # Print day summary
         corr = analysis_results['correlations']
@@ -457,8 +482,8 @@ def main():
     
     # Create summary visualization
     print("\nCreating summary visualization...")
-    summary_file = create_summary_visualization(df, day_results)
-    print(f"Summary plot saved: {summary_file}")
+    summary_file = create_summary_visualization(df, day_results, output_dir)
+    print(f"Summary plot saved: {Path(summary_file).name}")
     
     # Print summary statistics
     print_summary_statistics(df, day_results)
@@ -470,9 +495,10 @@ def main():
     if all_plot_files:
         print(f"\nGenerated {len(all_plot_files)} individual day plots:")
         for i, plot_file in enumerate(all_plot_files, 1):
-            print(f"  {i:2d}. {plot_file}")
-    print(f"\nSummary plot: {summary_file}")
+            print(f"  {i:2d}. {Path(plot_file).name}")
+    print(f"\nSummary plot: {Path(summary_file).name}")
     print(f"\nTotal plots generated: {len(all_plot_files) + 1}")
+    print(f"\nAll outputs saved to: {output_dir}")
 
 
 if __name__ == "__main__":

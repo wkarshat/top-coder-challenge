@@ -1,8 +1,6 @@
 # Project specific files
-public.csv
-publicS.csv
 data
-output
+outputs
 
 # Python bytecode
 __pycache__/
@@ -28,7 +26,8 @@ build/
 
 # IDEs and editors
 .idea/
-.vscode/
+#.vscode/
+.specstory/
 *.swp
 *.swo
 *~

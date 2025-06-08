@@ -1,0 +1,58 @@
+# Analysis-Specific Configuration
+
+# Data-specific settings
+data:
+  target_column: Reimb
+  feature_columns: [Days, Miles, Receipts]
+  required_columns: [Days, Miles, Receipts, Reimb]
+
+# Analysis methods to run
+analysis:
+  types: [correlation, statistical, advanced_stats, time_series, clustering]
+  correlation:
+    method: pearson
+    focus_pairs:
+      - [Miles, Receipts]
+      - [Miles, Reimb]
+      - [Receipts, Reimb]
+  
+  statistical:
+    normality_test: shapiro
+    significance_level: 0.05
+  
+  advanced_stats:
+    significance_level: 0.05
+    normality_tests: [shapiro, normaltest]
+    outlier_methods: [iqr, zscore]
+  
+  time_series:
+    time_column: Days
+    value_columns: [Miles, Receipts, Reimb]
+    forecast_periods: 3
+  
+  clustering:
+    algorithms: [kmeans, dbscan, hierarchical]
+    max_clusters: 8
+    scale_features: true
+
+# Models to run
+models:
+  types: [linear, ensemble]
+  linear:
+    fit_intercept: true
+  
+  ensemble:
+    ensemble_method: voting
+    base_models: [linear, tree, forest]
+    n_estimators: 50
+
+# Visualizations to generate
+visualization:
+  plots:
+    - type: scatter
+      x: Miles
+      y: Reimb
+    - type: scatter
+      x: Receipts
+      y: Reimb
+    - type: correlation_heatmap 

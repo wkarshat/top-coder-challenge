@@ -1,6 +1,8 @@
 # Project specific files
 data
 outputs
+DOCS
+works
 
 # Python bytecode
 __pycache__/

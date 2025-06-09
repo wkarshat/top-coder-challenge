@@ -67,15 +67,8 @@ def create_timestamped_output_dir(base_dir: str = 'outputs',
     
     timestamped_dir = f"{base_dir}/{prefix}_{timestamp}"
     
-    # Create the timestamped directory and subdirectories
-    subdirs = [
-        timestamped_dir,
-        f"{timestamped_dir}/plots",
-        f"{timestamped_dir}/reports", 
-        f"{timestamped_dir}/models"
-    ]
-    
-    ensure_directories(subdirs)
+    # Create the timestamped directory (no subdirectories)
+    ensure_directories([timestamped_dir])
     
     return timestamped_dir
 
@@ -393,4 +386,137 @@ def load_results(input_path: str) -> Dict[str, Any]:
         elif input_file.suffix.lower() in ['.yaml', '.yml']:
             return yaml.safe_load(f) or {}
         else:
-            raise ValueError(f"Unsupported input format: {input_file.suffix}") 
+            raise ValueError(f"Unsupported input format: {input_file.suffix}")
+
+
+def create_series_output_dir(base_name: str, series_id: str = None, base_dir: str = "outputs") -> Path:
+    """
+    Create a unique output directory for a series of analysis runs.
+    
+    Args:
+        base_name: Base name for the analysis (e.g., 'comprehensive_analysis')
+        series_id: Optional series identifier (defaults to current date)
+        base_dir: Base output directory
+        
+    Returns:
+        Path to the created series directory
+        
+    Example:
+        create_series_output_dir('daily_analysis') 
+        -> outputs/daily_analysis_20250608/run_001/
+    """
+    if series_id is None:
+        series_id = datetime.now().strftime("%Y%m%d")
+    
+    series_dir = Path(base_dir) / f"{base_name}_{series_id}"
+    series_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Find next run number
+    existing_runs = [d for d in series_dir.iterdir() if d.is_dir() and d.name.startswith('run_')]
+    if existing_runs:
+        run_numbers = [int(d.name.split('_')[1]) for d in existing_runs if d.name.split('_')[1].isdigit()]
+        next_run = max(run_numbers) + 1 if run_numbers else 1
+    else:
+        next_run = 1
+    
+    run_dir = series_dir / f"run_{next_run:03d}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create series metadata
+    metadata_file = series_dir / "series_metadata.json"
+    if not metadata_file.exists():
+        metadata = {
+            "series_name": base_name,
+            "series_id": series_id,
+            "created": datetime.now().isoformat(),
+            "runs": []
+        }
+    else:
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+    
+    # Add current run to metadata
+    metadata["runs"].append({
+        "run_number": next_run,
+        "run_dir": str(run_dir),
+        "timestamp": datetime.now().isoformat()
+    })
+    
+    with open(metadata_file, 'w') as f:
+        json.dump(metadata, f, indent=2)
+    
+    return run_dir
+
+
+def create_timestamped_output_dir(analysis_type: str = "analysis", base_dir: str = "outputs") -> Path:
+    """
+    Create a timestamped output directory (legacy format for compatibility).
+    
+    Args:
+        analysis_type: Type of analysis
+        base_dir: Base output directory
+        
+    Returns:
+        Path to the created timestamped directory
+    """
+    timestamp = datetime.now().strftime("%H%M%S")
+    output_dir = Path(base_dir) / f"{analysis_type}_{timestamp}"
+    output_dir.mkdir(parents=True, exist_ok=True)
+    
+    return output_dir
+
+
+def get_latest_series_run(base_name: str, series_id: str = None, base_dir: str = "outputs") -> Path:
+    """
+    Get the latest run directory for a given series.
+    
+    Args:
+        base_name: Base name for the analysis
+        series_id: Series identifier (defaults to current date)
+        base_dir: Base output directory
+        
+    Returns:
+        Path to the latest run directory, or None if no runs exist
+    """
+    if series_id is None:
+        series_id = datetime.now().strftime("%Y%m%d")
+    
+    series_dir = Path(base_dir) / f"{base_name}_{series_id}"
+    if not series_dir.exists():
+        return None
+    
+    existing_runs = [d for d in series_dir.iterdir() if d.is_dir() and d.name.startswith('run_')]
+    if not existing_runs:
+        return None
+    
+    run_numbers = [(int(d.name.split('_')[1]), d) for d in existing_runs if d.name.split('_')[1].isdigit()]
+    if not run_numbers:
+        return None
+    
+    latest_run = max(run_numbers, key=lambda x: x[0])[1]
+    return latest_run
+
+
+def list_series_runs(base_name: str, series_id: str = None, base_dir: str = "outputs") -> list:
+    """
+    List all runs in a series.
+    
+    Args:
+        base_name: Base name for the analysis
+        series_id: Series identifier (defaults to current date)
+        base_dir: Base output directory
+        
+    Returns:
+        List of run directories sorted by run number
+    """
+    if series_id is None:
+        series_id = datetime.now().strftime("%Y%m%d")
+    
+    series_dir = Path(base_dir) / f"{base_name}_{series_id}"
+    if not series_dir.exists():
+        return []
+    
+    existing_runs = [d for d in series_dir.iterdir() if d.is_dir() and d.name.startswith('run_')]
+    run_numbers = [(int(d.name.split('_')[1]), d) for d in existing_runs if d.name.split('_')[1].isdigit()]
+    
+    return [run_dir for _, run_dir in sorted(run_numbers)] 

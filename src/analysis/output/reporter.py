@@ -14,7 +14,7 @@ from core.interfaces import IReporter
 class Reporter(IReporter):
     """Generates analysis reports."""
     
-    def __init__(self, config: Dict[str, Any], output_dir: str = 'outputs/reports'):
+    def __init__(self, config: Dict[str, Any], output_dir: str = 'outputs'):
         """
         Initialize reporter.
         
@@ -49,7 +49,7 @@ class Reporter(IReporter):
         }
         
         # Generate JSON report
-        report_file = self.output_dir / 'analysis_report.json'
+        report_file = self.output_dir / 'analysis_data.json'
         with open(report_file, 'w', encoding='utf-8', newline='\n') as f:
             json.dump(report_data, f, indent=2, default=str)
         

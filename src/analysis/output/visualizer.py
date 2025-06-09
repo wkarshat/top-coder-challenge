@@ -16,7 +16,7 @@ from core.interfaces import IVisualizer
 class Visualizer(IVisualizer):
     """Creates visualizations for analysis results."""
     
-    def __init__(self, config: Dict[str, Any], output_dir: str = 'outputs/plots'):
+    def __init__(self, config: Dict[str, Any], output_dir: str = 'outputs'):
         """
         Initialize visualizer.
         

@@ -264,16 +264,14 @@ class AnalysisOrchestrator:
         output_results = {}
         
         try:
-            # Initialize output components with timestamped directories
+            # Initialize output components with simplified structure
             if self.visualizer is None:
                 viz_config = self.analysis_config.get('visualization', {})
-                plots_dir = f"{self.output_dir}/plots"
-                self.visualizer = Visualizer(viz_config, plots_dir)
+                self.visualizer = Visualizer(viz_config, self.output_dir)
             
             if self.reporter is None:
                 report_config = self.config.get('output', {})
-                reports_dir = f"{self.output_dir}/reports"
-                self.reporter = Reporter(report_config, reports_dir)
+                self.reporter = Reporter(report_config, self.output_dir)
             
             # Generate visualizations
             logger.info("Generating visualizations")

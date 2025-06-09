@@ -1,200 +1,334 @@
-# Output Management
+# Three Variable Fitting 809 Data - Output Management
 
-This document describes the complete output management system for the Legacy Analysis System, including directory structure, file organization, logging, and best practices.
+This document describes the complete output management system for the Legacy Analysis System, including directory structure, file organization, logging, test results, and best practices.
 
 ## Overview
 
-All analysis outputs are now organized in timestamped subdirectories under the `outputs/` directory. This ensures:
+All analysis outputs are organized using **standardized series-based directories** under the `outputs/` directory. This ensures:
+- **Parameter-encoded naming** for easy identification
+- **Run-based organization** with automatic incrementing
+- **Standardized file names** across all analyses
+- **Metadata tracking** for complete run history
 - **No file conflicts** between different analysis runs
-- **Easy identification** of when analyses were performed
-- **Clean organization** of different types of outputs
-- **Historical tracking** of analysis results
 
 ## Directory Structure
 
+### Current Standardized Structure
+
 ```
 outputs/
-├── analysis_HHMMSS/              # Main analysis system outputs
-│   ├── plots/                    # Visualizations and charts
-│   │   ├── correlation_heatmap.png
-│   │   ├── scatter_Miles_vs_Reimb.png
-│   │   └── scatter_Receipts_vs_Reimb.png
-│   ├── reports/                  # JSON reports and analysis summaries
-│   │   └── analysis_report.json
-│   └── models/                   # Model artifacts and metrics
-├── linear_regression_HHMMSS/     # Linear regression analysis outputs
-│   ├── day_1_miles_vs_reimb.png # Individual day analysis plots
-│   ├── day_1_receipts_vs_reimb.png
-│   ├── day_X_*.png              # Additional day plots
-│   └── summary_analysis.png      # Multi-panel summary visualization
-└── logs/                         # Centralized system logs
-    └── analysis.log
+├── README.md                           # Documentation
+├── comprehensive_r8_20250608/          # 8-region comprehensive analysis
+│   ├── metadata.json (325B)           # Run tracking metadata
+│   ├── run001/                        # First run
+│   │   ├── results.json (48KB)        # Standardized results
+│   │   ├── summary.txt (151B)         # Human-readable summary
+│   │   └── dashboard.png (411KB)      # Primary visualization
+│   └── run002/                        # Second run
+│       ├── results.json
+│       ├── summary.txt
+│       └── dashboard.png
+├── daily_m14_20250608/                # Daily analysis (max 14 days)
+│   ├── metadata.json (312B)
+│   └── run001/
+│       ├── results.json (68KB)
+│       ├── summary.txt (143B)
+│       └── dashboard.png (437KB)
+├── daily_rate_m150_r100_20250608/     # Daily rate (150 miles, $100 receipts)
+│   ├── metadata.json (348B)
+│   └── run001/
+│       ├── results.json (65KB)
+│       ├── summary.txt (148B)
+│       └── dashboard.png (544KB)
+├── main_20250608/                     # Main system orchestrator
+│   ├── metadata.json (282B)
+│   └── run001/
+│       ├── results.json (535KB)
+│       ├── summary.txt (136B)
+│       ├── correlation_heatmap.png (30KB)
+│       ├── scatter_Miles_vs_Reimb.png (105KB)
+│       └── scatter_Receipts_vs_Reimb.png (105KB)
+├── reimb_threshold_t1000_20250608/    # $1000 threshold analysis
+│   ├── metadata.json (337B)
+│   └── run001/
+│       ├── results.json (21KB)
+│       ├── summary.txt (153B)
+│       └── dashboard.png (383KB)
+├── script_20250608/                   # Script wrapper
+│   ├── metadata.json (286B)
+│   └── run001/
+│       ├── results.json (535KB)
+│       ├── summary.txt (136B)
+│       ├── correlation_heatmap.png (30KB)
+│       ├── scatter_Miles_vs_Reimb.png (105KB)
+│       └── scatter_Receipts_vs_Reimb.png (105KB)
+└── logs/                              # System logs
+    └── analysis.log (2.8KB)
 ```
 
-## Timestamp Format
+**Total Files Generated**: 42 files across 6 analysis series  
+**Total Data Size**: ~2.8MB of analysis results and visualizations
 
-- **Format**: `HHMMSS` (24-hour format)
-- **Example**: `030524` = 03:05:24 (3:05:24 AM)
-- **Purpose**: Ensures unique directory names for each analysis run
+## Naming Conventions
 
-## Analysis Types
+### Directory Names
+- **Format**: `{analysis_type}_{parameters}_{series_id}/`
+- **Series ID**: `YYYYMMDD` (date-based identifier)
+- **Parameter encoding**:
+  - `r8` = 8 regions
+  - `m14` = maximum 14 days
+  - `m150_r100` = 150 miles threshold, $100 receipts threshold
+  - `t1000` = $1000 threshold
 
-### 1. Main Analysis System (`analysis_HHMMSS/`)
+### Run Directories
+- **Format**: `run{number:03d}/` (run001, run002, etc.)
+- **Auto-incrementing**: System automatically creates next available run number
 
-**Command**: `cd src && python -m core.main --data ../public.csv`
+### File Names (Standardized)
+- **`results.json`** - Complete analysis results and metadata
+- **`summary.txt`** - Human-readable analysis summary
+- **`dashboard.png`** - Primary visualization dashboard
+- **Additional files** - Analysis-specific outputs (correlation plots, etc.)
 
-**Outputs**:
-- `plots/correlation_heatmap.png` - Correlation matrix visualization with significance indicators
-- `plots/scatter_Miles_vs_Reimb.png` - Miles vs Reimbursement scatter plot with regression line
-- `plots/scatter_Receipts_vs_Reimb.png` - Receipts vs Reimbursement scatter plot with regression line
-- `reports/analysis_report.json` - Comprehensive JSON report containing:
-  - Analysis results from all 5 analyzers
-  - Model performance metrics (R², MSE, MAE)
-  - Statistical summaries and correlations
-  - Clustering results and evaluation metrics
-  - Time series analysis and forecasts
-- `models/` - Model artifacts and serialized objects (when applicable)
+## Analysis Types and Commands
 
-**Features**:
-- 5 analysis types: correlation, statistical, advanced_stats, time_series, clustering
-- 2 model types: linear, ensemble
-- Comprehensive JSON report with all results
+### 1. Main System Analysis (`main_20250608/`)
 
-### 2. Linear Regression Analysis (`linear_regression_HHMMSS/`)
-
-**Command**: `python linear_regression.py --csv public.csv --days 1,7,14`
+**Command**: `python src/core/main.py --csv public.csv --config config.yaml --analysis-config analysis.yaml`
 
 **Outputs**:
-- `day_X_miles_vs_reimb.png` - Miles vs Reimbursement scatter plot for specific day with:
-  - Regression line and R² score
-  - Correlation coefficient and p-value
-  - Sample size and data distribution
-- `day_X_receipts_vs_reimb.png` - Receipts vs Reimbursement scatter plot for specific day with:
-  - Regression line and R² score
-  - Correlation coefficient and p-value
-  - Sample size and data distribution
-- `summary_analysis.png` - Multi-panel summary visualization containing:
-  - Data distribution by days (bar chart)
-  - Miles vs Receipts colored by days (scatter plot)
-  - R² values by day comparison (bar chart)
-  - Reimbursement distribution by days (box plots)
+- `results.json` (535KB) - Complete analysis results from 5 analyzers and 2 models
+- `summary.txt` (136B) - Analysis summary with performance metrics
+- `correlation_heatmap.png` (30KB) - Correlation matrix visualization
+- `scatter_Miles_vs_Reimb.png` (105KB) - Miles vs Reimbursement scatter plot
+- `scatter_Receipts_vs_Reimb.png` (105KB) - Receipts vs Reimbursement scatter plot
 
-**Features**:
-- Day-by-day analysis with binned correlations
-- Detailed statistical summaries
-- Configurable day ranges
+**Performance**: Linear R² = 0.784, Ensemble R² = 0.913  
+**Test Status**: ✅ SUCCESS
+
+### 2. Script Wrapper (`script_20250608/`)
+
+**Command**: `python scripts/run_analysis.py --csv public.csv`
+
+**Outputs**: Identical to main system (wrapper for same orchestrator)  
+**Performance**: Linear R² = 0.784, Ensemble R² = 0.913  
+**Test Status**: ✅ SUCCESS
+
+### 3. Comprehensive Binned Analysis (`comprehensive_r8_20250608/`)
+
+**Command**: `python -m src.analysis.binned.comprehensive_analysis --csv public.csv`
+
+**Outputs**:
+- `results.json` (48KB) - 8-region analysis with linear and polynomial models
+- `summary.txt` (151B) - Regional performance summary
+- `dashboard.png` (411KB) - Comprehensive visualization dashboard
+
+**Performance**: Linear R² = 0.784, Polynomial avg R² = 0.852  
+**Regions**: 8 regions analyzed (R0-R7)  
+**Test Status**: ✅ SUCCESS
+
+### 4. Daily Analysis (`daily_m14_20250608/`)
+
+**Command**: `python -m src.analysis.binned.daily_analysis --csv public.csv`
+
+**Outputs**:
+- `results.json` (68KB) - Day-by-day analysis (Days 1-14)
+- `summary.txt` (143B) - Daily performance ranking
+- `dashboard.png` (437KB) - Daily analysis visualization
+
+**Performance**: R² range 0.585-0.872 across 14 days  
+**Best**: Day 2 (R² = 0.872), Day 3 (R² = 0.850)  
+**Test Status**: ✅ SUCCESS
+
+### 5. Daily Rate Analysis (`daily_rate_m150_r100_20250608/`)
+
+**Command**: `python -m src.analysis.binned.daily_rate_analysis --csv public.csv`
+
+**Outputs**:
+- `results.json` (65KB) - 56 subregion analysis with rate thresholds
+- `summary.txt` (148B) - Subregion performance summary
+- `dashboard.png` (544KB) - Rate analysis visualization
+
+**Performance**: 42/56 subregions populated, R² range 0.090-0.951  
+**Best**: Day2_M≤300_R≤$200 (R² = 0.951)  
+**Test Status**: ✅ SUCCESS
+
+### 6. Reimbursement Threshold Analysis (`reimb_threshold_t1000_20250608/`)
+
+**Command**: `python -m src.analysis.binned.reimb_threshold_analysis --csv public.csv`
+
+**Outputs**:
+- `results.json` (21KB) - Above/below $1000 threshold analysis
+- `summary.txt` (153B) - Threshold comparison summary
+- `dashboard.png` (383KB) - Threshold analysis visualization
+
+**Performance**: Below $1000: R² = 0.612, Above $1000: R² = 0.619  
+**Distribution**: 246 records below, 754 records above $1000 threshold  
+**Test Status**: ✅ SUCCESS
+
+## Test Results Summary
+
+All 6 analysis programs successfully executed with standardized naming and proper directory organization:
+
+| Analysis Program | Directory | Performance | Files | Status |
+|-----------------|-----------|-------------|-------|--------|
+| Main System | `main_20250608/` | Linear R² = 0.784, Ensemble R² = 0.913 | 5 files | ✅ SUCCESS |
+| Script Wrapper | `script_20250608/` | Linear R² = 0.784, Ensemble R² = 0.913 | 5 files | ✅ SUCCESS |
+| Comprehensive | `comprehensive_r8_20250608/` | Linear R² = 0.784, Polynomial avg R² = 0.852 | 3 files | ✅ SUCCESS |
+| Daily Analysis | `daily_m14_20250608/` | R² range 0.585-0.872 | 3 files | ✅ SUCCESS |
+| Daily Rate | `daily_rate_m150_r100_20250608/` | R² range 0.090-0.951 | 3 files | ✅ SUCCESS |
+| Threshold | `reimb_threshold_t1000_20250608/` | Below: R² = 0.612, Above: R² = 0.619 | 3 files | ✅ SUCCESS |
+
+## Metadata Tracking
+
+Each analysis series includes `metadata.json` with complete run history:
+
+```json
+{
+  "analysis_type": "comprehensive",
+  "series_id": "20250608",
+  "parameters": {"regions": 8},
+  "created": "2025-06-08T20:33:26.911641",
+  "runs": [
+    {
+      "run_number": 1,
+      "run_dir": "outputs\\comprehensive_r8_20250608\\run001",
+      "timestamp": "2025-06-08T20:33:26.911641"
+    },
+    {
+      "run_number": 2,
+      "run_dir": "outputs\\comprehensive_r8_20250608\\run002",
+      "timestamp": "2025-06-08T20:36:26.252079"
+    }
+  ]
+}
+```
+
+## File Contents
+
+### `results.json`
+Complete analysis results including:
+- Model performance metrics (R², RMSE, coefficients)
+- Statistical analysis results
+- Regional/daily breakdowns
+- Configuration parameters
+- Data summary statistics
+
+### `summary.txt`
+Human-readable summary with:
+- Analysis type and configuration
+- Key performance metrics
+- File generation confirmation
+- Record counts and distributions
+
+### `dashboard.png`
+Primary visualization containing:
+- Performance comparisons
+- Regional/daily breakdowns
+- Model coefficient visualizations
+- Statistical distributions
+
+## Legacy Format Support
+
+The system supports legacy timestamped format using the `--legacy` flag:
+
+**Command**: `python -m src.analysis.binned.comprehensive_analysis --csv public.csv --legacy`
+
+**Creates**: `outputs/comprehensive_205818/` (legacy HHMMSS format)
 
 ## Configuration
 
 ### Automatic Directory Creation
 
-The system automatically creates timestamped directories using:
-
 ```python
-from core.utils import create_timestamped_output_dir
+from core.utils import create_organized_output_dir
 
-# Creates: outputs/analysis_HHMMSS/
-output_dir = create_timestamped_output_dir('outputs', 'analysis')
+# Creates organized directory with parameter encoding
+output_dir = create_organized_output_dir('comprehensive', {'regions': 8})
+# Result: outputs/comprehensive_r8_20250608/run001/
 ```
 
-### Path Handling
+### Standardized Results Saving
 
-- **From main directory**: Uses `outputs/` directly
-- **From src directory**: Uses `../outputs/` to ensure consistent location
-- **Automatic detection**: System detects current working directory and adjusts paths
+```python
+from core.utils import save_standardized_results
+
+# Save with standardized file names
+save_standardized_results(output_dir, results_data, summary_text, dashboard_plot)
+# Creates: results.json, summary.txt, dashboard.png
+```
 
 ## Benefits
 
-### ✅ **Organization**
-- All outputs grouped by analysis run
-- Clear separation between different analysis types
-- No scattered files in main directory
+### ✅ **Parameter Identification**
+- Directory names encode key parameters
+- Easy to identify analysis configurations
+- Quick comparison between parameter variations
 
-### ✅ **Traceability**
-- Timestamp shows exactly when analysis was performed
-- Easy to correlate outputs with analysis runs
-- Historical record of all analyses
+### ✅ **Run Management**
+- Automatic run numbering prevents conflicts
+- Complete run history with metadata
+- Easy to track analysis evolution
 
-### ✅ **Scalability**
-- Supports multiple concurrent analyses
-- No file naming conflicts
-- Easy to add new analysis types
+### ✅ **Standardization**
+- Consistent file names across all analyses
+- Predictable structure for automation
+- Simplified result processing
 
-### ✅ **Maintenance**
-- Old analyses can be easily identified and archived
-- Clean main directory structure
-- Consistent organization across all tools
+### ✅ **Backward Compatibility**
+- Legacy format still supported
+- Gradual migration path
+- No disruption to existing workflows
 
 ## Usage Examples
 
-### Run Main Analysis
+### Standard Analysis
 ```bash
-cd src
-python -m core.main --data ../public.csv
-# Creates: outputs/analysis_HHMMSS/
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
+# Creates: outputs/comprehensive_r8_20250608/run001/
 ```
 
-### Run Linear Regression Analysis
+### Multiple Runs
 ```bash
-python linear_regression.py --csv public.csv --days all
-# Creates: outputs/linear_regression_HHMMSS/
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
+# Creates: outputs/comprehensive_r8_20250608/run002/
 ```
 
-### Custom Output Directory
+### Legacy Format
 ```bash
-python linear_regression.py --csv public.csv --output-dir custom_analysis
-# Creates: custom_analysis/ (no timestamp)
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv --legacy
+# Creates: outputs/comprehensive_205818/
 ```
 
 ## Migration from Old Structure
 
-The old structure with scattered PNG files and mixed directories has been cleaned up:
-
-**Before**:
-```
-├── day_1_miles_vs_reimb.png     # Scattered in main directory
-├── day_1_receipts_vs_reimb.png  # Scattered in main directory
-├── summary_analysis.png         # Scattered in main directory
-├── output/                      # Mixed with outputs/
-└── outputs/
-    ├── plots/                   # Not timestamped
-    ├── reports/                 # Not timestamped
-    └── models/                  # Not timestamped
-```
-
-**After**:
+**Before (Legacy)**:
 ```
 outputs/
-├── analysis_030524/
-│   ├── plots/
-│   ├── reports/
-│   └── models/
-└── linear_regression_030245/
-    ├── day_*.png
-    └── summary_analysis.png
+├── analysis_143208/              # Inconsistent naming
+├── daily_analysis/               # No timestamp
+├── reimb_threshold_analysis/     # No timestamp
+└── analysis_data.json           # Non-standard file names
 ```
 
-## Best Practices
-
-1. **Always use timestamped directories** for new analyses
-2. **Archive old analyses** periodically to save space
-3. **Use descriptive prefixes** for different analysis types
-4. **Document analysis parameters** in the output directory if needed
-5. **Keep the main directory clean** - no direct output files
+**After (Standardized)**:
+```
+outputs/
+├── comprehensive_r8_20250608/
+│   ├── metadata.json
+│   └── run001/
+│       ├── results.json         # Standardized names
+│       ├── summary.txt
+│       └── dashboard.png
+├── daily_m14_20250608/
+└── reimb_threshold_t1000_20250608/
+```
 
 ## Logging System
 
 ### Log Configuration
 
-Logs are centralized in `outputs/logs/` with the following structure:
-
-```
-outputs/logs/
-├── analysis.log          # Main system logs
-└── [other_logs]          # Additional log files as needed
-```
-
-### Log Configuration (config.yaml)
+Centralized logging in `outputs/logs/analysis.log`:
 
 ```yaml
 logging:
@@ -206,43 +340,50 @@ logging:
 
 ### Log Content
 
-- **Data loading and validation**: Record counts, column information
-- **Analysis execution**: Start/completion times, success/failure status
-- **Model training**: Performance metrics, training progress
-- **Output generation**: File creation, path information
+- **Directory creation**: Output path and run number
+- **Analysis execution**: Start/completion times, performance metrics
+- **File generation**: Results, visualizations, summaries
 - **Error handling**: Detailed error messages and stack traces
 
-## File Management
+### Sample Log Entries
 
-### Automatic Cleanup
+```
+2025-06-08 21:09:10,815 - INFO - Starting analysis pipeline for public.csv
+2025-06-08 21:09:10,820 - INFO - Loaded 1000 records with 4 columns
+2025-06-08 21:09:13,848 - INFO - linear model completed
+2025-06-08 21:09:14,938 - INFO - ensemble model completed
+2025-06-08 21:09:15,304 - INFO - Analysis pipeline completed successfully
+```
 
-The system maintains clean organization by:
-- **Timestamped directories**: Prevent file conflicts
-- **Centralized outputs**: All files in designated locations
-- **No scattered files**: Main directory stays clean
+## Best Practices
 
-### Archive Strategy
+1. **Use standardized format** for new analyses (default behavior)
+2. **Include parameter encoding** in directory names for identification
+3. **Maintain run history** through metadata tracking
+4. **Use consistent file names** (results.json, summary.txt, dashboard.png)
+5. **Archive old series** periodically to save space
+6. **Document significant findings** in summary.txt files
+7. **Monitor log files** for analysis execution status
+8. **Use PowerShell syntax** for Windows command execution
 
-For long-term maintenance:
-1. **Keep recent analyses**: Last 5-10 timestamped directories
-2. **Archive older results**: Move to archive directory or external storage
-3. **Document significant analyses**: Add README files for important results
+## Archive Policy
 
-## Integration with Analysis Tools
+- **Keep recent series**: Last 5 series per analysis type
+- **Archive older results**: Move to `archive/` subdirectory
+- **Clean up logs**: Rotate analysis.log when it exceeds 10MB
+- **Preserve metadata**: Always keep metadata.json files for historical tracking
 
-### Main Analysis System
-- **Configuration**: `config.yaml` and `analysis.yaml`
-- **Output location**: `outputs/analysis_HHMMSS/`
-- **Logging**: Comprehensive pipeline logging
+## Program-to-Directory Mapping
 
-### Linear Regression Tool
-- **Configuration**: Command-line arguments
-- **Output location**: `outputs/linear_regression_HHMMSS/`
-- **Logging**: Console output with detailed statistics
+| Directory Prefix | Source Program | Module Path | Analysis Type |
+|-----------------|----------------|-------------|---------------|
+| `comprehensive_` | comprehensive_analysis.py | src.analysis.binned.comprehensive_analysis | 8-region binned |
+| `daily_m` | daily_analysis.py | src.analysis.binned.daily_analysis | Daily (1-14) |
+| `daily_rate_` | daily_rate_analysis.py | src.analysis.binned.daily_rate_analysis | Subregion rate |
+| `main_` | main.py | src.core.main | System orchestrator |
+| `reimb_threshold_` | reimb_threshold_analysis.py | src.analysis.binned.reimb_threshold_analysis | Threshold split |
+| `script_` | run_analysis.py | scripts.run_analysis | Script wrapper |
 
-### Script Interface
-- **Configuration**: YAML files + CLI arguments
-- **Output location**: Configurable with defaults
-- **Logging**: Combined system and script logging
+**Note**: `main_` and `script_` generate identical analysis results since `run_analysis.py` is a wrapper that calls the same `AnalysisOrchestrator` as `main.py`.
 
-This comprehensive output management system ensures consistent, organized, and maintainable output handling across the entire Legacy Analysis System. 
+This standardized output management system provides consistent, organized, and maintainable output handling across all Legacy Analysis System components. 

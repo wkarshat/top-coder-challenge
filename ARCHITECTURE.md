@@ -1,4 +1,4 @@
-# Legacy Analysis System Architecture
+# Three Variable Fitting 809 Data - System Architecture
 
 ## Overview
 
@@ -15,7 +15,7 @@ The system implements the legacy reimbursement formula: **Reimb = Days × 100 + 
 
 ### 2. **Scalable Processing**
 - Parallel processing capabilities
-- Timestamped output organization
+- Standardized output organization with parameter encoding
 - Memory-efficient data handling
 
 ### 3. **Comprehensive Analysis**
@@ -32,7 +32,6 @@ The system implements the legacy reimbursement formula: **Reimb = Days × 100 + 
 ├── setup.py
 ├── config.yaml                    # Core system configuration
 ├── analysis.yaml                  # Analysis-specific configuration
-├── linear_regression.py           # Standalone regression analysis
 ├── src/
 │   ├── __init__.py
 │   ├── core/
@@ -40,9 +39,18 @@ The system implements the legacy reimbursement formula: **Reimb = Days × 100 + 
 │   │   ├── interfaces.py          # Abstract base classes
 │   │   ├── utils.py               # Common utilities and functions
 │   │   ├── loader.py              # Data loading, validation, preprocessing
-│   │   └── main.py                # Main execution orchestrator
+│   │   ├── main.py                # Main execution orchestrator
+│   │   └── calculate_reimbursement.py  # Core reimbursement calculation
 │   └── analysis/
 │       ├── __init__.py
+│       ├── binned/                # Binned analysis implementations
+│       │   ├── comprehensive_analysis.py   # Complete linear formula analysis
+│       │   ├── daily_analysis.py           # Daily binning analysis
+│       │   ├── daily_rate_analysis.py      # Daily rate threshold analysis
+│       │   └── reimb_threshold_analysis.py # Reimbursement threshold analysis
+│       ├── tools/                 # Analysis utility tools
+│       │   ├── enhanced_analysis.py        # Enhanced analysis capabilities
+│       │   └── linear_regression.py        # Standalone regression analysis
 │       ├── models/
 │       │   ├── __init__.py
 │       │   ├── linear_model.py    # Linear regression implementation
@@ -58,10 +66,17 @@ The system implements the legacy reimbursement formula: **Reimb = Days × 100 + 
 │           ├── __init__.py
 │           ├── visualizer.py      # Plot generation
 │           └── reporter.py        # Report generation
-├── outputs/                       # Timestamped analysis outputs (see OUTPUT.md)
+├── outputs/                       # Standardized analysis outputs (see OUTPUT.md)
+│   ├── comprehensive_r8_20250608/ # 8-region comprehensive analysis
+│   ├── daily_m14_20250608/        # Daily analysis (max 14 days)
+│   ├── daily_rate_m150_r100_20250608/ # Daily rate analysis
+│   ├── main_20250608/             # Main system orchestrator
+│   ├── reimb_threshold_t1000_20250608/ # $1000 threshold analysis
+│   ├── script_20250608/           # Script wrapper
+│   └── logs/                      # System logs
 └── scripts/
     ├── run_analysis.py           # Entry point script
-    └── modular_analysis.py       # Alternative analysis script
+    └── powershell/               # PowerShell utilities
 ```
 
 ## Core Components
@@ -96,13 +111,16 @@ class IReporter(ABC):
 
 ### 2. **Core Utilities (`src/core/utils.py`)**
 
-Provides essential utility functions:
+Provides essential utility functions including standardized output management:
 
 ```python
 # Configuration and setup
 def load_config(path: str) -> dict
 def setup_logging(config: dict) -> None
-def create_timestamped_output_dir(base_dir: str, prefix: str) -> str
+
+# Standardized output management
+def create_organized_output_dir(analysis_type: str, parameters: dict) -> str
+def save_standardized_results(output_dir: str, results: dict, summary: str, dashboard: Any) -> None
 
 # Data processing utilities
 def validate_columns(df: DataFrame, required: List[str]) -> bool
@@ -135,7 +153,7 @@ Central coordinator for the analysis pipeline:
 
 ```python
 class AnalysisOrchestrator:
-    def __init__(self, config_path: str, analysis_config_path: str):
+    def __init__(self, config_path: str, analysis_config_path: str, output_dir: str):
         # Load configurations
         # Setup environment and logging
         # Initialize components
@@ -145,7 +163,7 @@ class AnalysisOrchestrator:
         # 2. Run analyses (parallel/sequential)
         # 3. Train and evaluate models
         # 4. Generate visualizations and reports
-        # 5. Save to timestamped output directory
+        # 5. Save to standardized output directory
         return results
 ```
 
@@ -159,7 +177,30 @@ class AnalysisOrchestrator:
 4. **Time Series Analyzer**: Trend analysis, seasonality detection, forecasting
 5. **Clustering Analyzer**: K-means, DBSCAN, hierarchical clustering with evaluation
 
-*Note: Binned correlation analysis is available in the standalone `linear_regression.py` tool.*
+### **Binned Analysis Components**
+
+1. **Comprehensive Linear Formula Analyzer** (`src/analysis/binned/comprehensive_analysis.py`):
+   - Linear formula fitting: A×Days + B×Miles + C×Receipts + D
+   - 8-region parameter space segmentation
+   - Regional coefficient comparison and analysis
+   - Performance ranking across regions
+   - Polynomial model enhancement
+   - Comprehensive visualization dashboard
+
+2. **Daily Analysis** (`src/analysis/binned/daily_analysis.py`):
+   - Day-by-day analysis (Days 1-14)
+   - Daily performance ranking
+   - Individual day coefficient analysis
+
+3. **Daily Rate Analysis** (`src/analysis/binned/daily_rate_analysis.py`):
+   - 56 subregion analysis with rate thresholds
+   - Miles and receipts threshold combinations
+   - Subregion performance comparison
+
+4. **Reimbursement Threshold Analysis** (`src/analysis/binned/reimb_threshold_analysis.py`):
+   - Above/below threshold analysis
+   - Statistical significance testing
+   - Threshold comparison metrics
 
 ### **Models**
 
@@ -172,7 +213,26 @@ class AnalysisOrchestrator:
 ### **Output Components**
 
 1. **Visualizer**: Creates scatter plots, correlation heatmaps, clustering visualizations
-2. **Reporter**: Generates comprehensive JSON reports with all analysis results
+2. **Reporter**: Generates standardized JSON reports with all analysis results
+
+## Standardized Output System
+
+### **Directory Organization**
+- **Parameter-encoded naming**: `{analysis_type}_{parameters}_{series_id}/`
+- **Auto-incrementing runs**: `run001/`, `run002/`, etc.
+- **Metadata tracking**: Complete run history in `metadata.json`
+- **Standardized files**: `results.json`, `summary.txt`, `dashboard.png`
+
+### **Analysis Programs and Outputs**
+
+| Program | Directory | Command | Performance |
+|---------|-----------|---------|-------------|
+| Main System | `main_20250608/` | `python src/core/main.py --csv public.csv --config config.yaml --analysis-config analysis.yaml` | Linear R² = 0.784, Ensemble R² = 0.913 |
+| Script Wrapper | `script_20250608/` | `python scripts/run_analysis.py --csv public.csv` | Linear R² = 0.784, Ensemble R² = 0.913 |
+| Comprehensive | `comprehensive_r8_20250608/` | `python -m src.analysis.binned.comprehensive_analysis --csv public.csv` | Linear R² = 0.784, Polynomial avg R² = 0.852 |
+| Daily Analysis | `daily_m14_20250608/` | `python -m src.analysis.binned.daily_analysis --csv public.csv` | R² range 0.585-0.872 |
+| Daily Rate | `daily_rate_m150_r100_20250608/` | `python -m src.analysis.binned.daily_rate_analysis --csv public.csv` | R² range 0.090-0.951 |
+| Threshold | `reimb_threshold_t1000_20250608/` | `python -m src.analysis.binned.reimb_threshold_analysis --csv public.csv` | Below: R² = 0.612, Above: R² = 0.619 |
 
 ## Configuration System
 
@@ -246,14 +306,25 @@ visualization:
 
 ```bash
 # Main analysis system
-cd src
-python -m core.main --data ../public.csv
+python src/core/main.py --csv public.csv --config config.yaml --analysis-config analysis.yaml
 
-# Linear regression analysis
-python linear_regression.py --csv public.csv --days all
+# Comprehensive binned analysis
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
 
-# Using scripts
-python scripts/run_analysis.py --data-source public.csv
+# Daily analysis
+python -m src.analysis.binned.daily_analysis --csv public.csv
+
+# Daily rate analysis
+python -m src.analysis.binned.daily_rate_analysis --csv public.csv
+
+# Reimbursement threshold analysis
+python -m src.analysis.binned.reimb_threshold_analysis --csv public.csv
+
+# Script wrapper
+python scripts/run_analysis.py --csv public.csv
+
+# Legacy format (optional)
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv --legacy
 ```
 
 ### **Programmatic Usage**
@@ -262,7 +333,7 @@ python scripts/run_analysis.py --data-source public.csv
 from src.core.main import AnalysisOrchestrator
 
 # Initialize orchestrator
-orchestrator = AnalysisOrchestrator('config.yaml', 'analysis.yaml')
+orchestrator = AnalysisOrchestrator('config.yaml', 'analysis.yaml', 'outputs/main_20250608/run001')
 
 # Run analysis
 results = orchestrator.run_analysis('public.csv')
@@ -274,15 +345,18 @@ print(f"R² Score: {results['models']['linear']['metrics']['r2_score']}")
 ## Output Organization
 
 All output management is detailed in **OUTPUT.md**, including:
-- Complete directory structure with file examples
+- Complete directory structure with file sizes and examples
 - Detailed descriptions of all output files
-- Logging system configuration
-- Integration with analysis tools
+- Test results summary for all 6 analysis programs
+- Logging system configuration and sample entries
+- Program-to-directory mapping
+- Legacy format support
 
 Key features:
-- **Timestamped directories**: Prevent file conflicts between analysis runs
+- **Standardized directories**: Parameter-encoded naming with auto-incrementing runs
 - **Centralized logging**: All system events in `outputs/logs/analysis.log`
-- **Tool integration**: Support for main analysis system and linear regression tool
+- **Metadata tracking**: Complete run history with timestamps and parameters
+- **Consistent file names**: `results.json`, `summary.txt`, `dashboard.png`
 
 ## Key Features
 
@@ -299,10 +373,24 @@ Key features:
 - **Comprehensive error handling** and logging
 
 ### **Production Ready**
-- **Timestamped outputs** prevent file conflicts
+- **Standardized outputs** with parameter encoding and run tracking
 - **Comprehensive logging** for debugging and auditing
 - **Memory-efficient** processing for large datasets
 - **Extensible plugin architecture** for custom components
+- **Legacy format support** for backward compatibility
+
+## Test Results
+
+All 6 analysis programs have been successfully tested and validated:
+
+- ✅ **Main System**: Linear R² = 0.784, Ensemble R² = 0.913
+- ✅ **Script Wrapper**: Identical performance to main system
+- ✅ **Comprehensive Analysis**: 8 regions analyzed, polynomial enhancement
+- ✅ **Daily Analysis**: 14 days analyzed, R² range 0.585-0.872
+- ✅ **Daily Rate Analysis**: 42/56 subregions populated, R² up to 0.951
+- ✅ **Threshold Analysis**: Statistical significance testing completed
+
+**Total Output**: 42 files across 6 analysis series, ~2.8MB of results and visualizations
 
 ## TODO: Future Improvements and Open Issues
 

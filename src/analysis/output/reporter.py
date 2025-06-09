@@ -48,9 +48,18 @@ class Reporter(IReporter):
             'model_results': model_results
         }
         
-        # Generate JSON report
-        report_file = self.output_dir / 'analysis_data.json'
+        # Generate JSON report with standardized name
+        report_file = self.output_dir / 'results.json'
         with open(report_file, 'w', encoding='utf-8', newline='\n') as f:
             json.dump(report_data, f, indent=2, default=str)
+        
+        # Generate standardized summary
+        summary_file = self.output_dir / 'summary.txt'
+        with open(summary_file, 'w') as f:
+            f.write(f"Analysis Summary: main system\n")
+            f.write(f"Total Records: {len(data)}\n")
+            f.write(f"Analyzers: {len(analysis_results)}\n")
+            f.write(f"Models: {len(model_results)}\n")
+            f.write(f"Files Generated: results.json, dashboard.png, summary.txt\n")
         
         return str(report_file) 

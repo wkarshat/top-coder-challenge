@@ -31,26 +31,26 @@ def parse_arguments():
         epilog="""
 Examples:
   # Basic analysis
-  python scripts/run_analysis.py --data-source public.csv
+  python scripts/run_analysis.py --csv public.csv
   
   # Custom configuration
   python scripts/run_analysis.py \\
-      --data-source data/reimbursement.csv \\
+      --csv data/reimbursement.csv \\
       --config config.yaml \\
       --analysis-config analysis.yaml \\
       --output-dir results/
   
   # Batch processing
   python scripts/run_analysis.py \\
-      --data-source public.csv,private.csv \\
+      --csv public.csv,private.csv \\
       --batch
         """
     )
     
     parser.add_argument(
-        '--data-source', '-d',
+        '--csv',
         required=True,
-        help='Data source file(s). For batch processing, separate with commas'
+        help='CSV data file. For batch processing, separate with commas'
     )
     
     parser.add_argument(
@@ -67,7 +67,8 @@ Examples:
     
     parser.add_argument(
         '--output-dir', '-o',
-        help='Output directory (overrides config setting)'
+        default=None,
+        help='Output directory (auto-generated if not specified)'
     )
     
     parser.add_argument(
@@ -88,6 +89,12 @@ Examples:
         help='Suppress output except errors'
     )
     
+    parser.add_argument(
+        '--legacy', 
+        action='store_true',
+        help='Use legacy timestamped directory format'
+    )
+    
     return parser.parse_args()
 
 
@@ -103,7 +110,7 @@ def validate_files(args):
         errors.append(f"Analysis config file not found: {args.analysis_config}")
     
     # Check data sources
-    data_sources = args.data_source.split(',') if args.batch else [args.data_source]
+    data_sources = args.csv.split(',') if args.batch else [args.csv]
     
     for source in data_sources:
         source = source.strip()
@@ -148,20 +155,32 @@ def main():
         sys.exit(1)
     
     try:
+        # Create output directory with standardized naming
+        if args.output_dir:
+            output_dir = args.output_dir
+        else:
+            import sys
+            sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+            from core.utils import create_organized_output_dir
+            output_dir = create_organized_output_dir(
+                analysis_type="script",
+                legacy=args.legacy
+            )
+        
+        if not args.quiet:
+            print(f"Output directory: {output_dir}")
+        
         # Initialize orchestrator
         orchestrator = AnalysisOrchestrator(
             config_path=args.config,
-            analysis_config_path=args.analysis_config
+            analysis_config_path=args.analysis_config,
+            output_dir=str(output_dir)
         )
-        
-        # Override output directory if specified
-        if args.output_dir:
-            orchestrator.config['output']['base_dir'] = args.output_dir
         
         # Run analysis
         if args.batch:
             # Batch processing
-            data_sources = [s.strip() for s in args.data_source.split(',')]
+            data_sources = [s.strip() for s in args.csv.split(',')]
             
             if not args.quiet:
                 print(f"Running batch analysis on {len(data_sources)} sources...")
@@ -180,9 +199,9 @@ def main():
         else:
             # Single source processing
             if not args.quiet:
-                print(f"Running analysis on {args.data_source}...")
+                print(f"Running analysis on {args.csv}...")
             
-            results = orchestrator.run_analysis(args.data_source)
+            results = orchestrator.run_analysis(args.csv)
             
             # Print summary
             if not args.quiet:

@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Dict, List, Any
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-from core.utils import load_config, setup_logging, ensure_directories, create_timestamped_output_dir
+from core.utils import load_config, setup_logging, ensure_directories, create_timestamped_output_dir, create_organized_output_dir
 from core.loader import DataLoader
 from analysis.models.linear_model import LinearModel
 from analysis.models.ensemble import EnsembleModel, AdvancedEnsembleModel
@@ -29,30 +29,36 @@ class AnalysisOrchestrator:
     """Main orchestrator for analysis pipeline execution."""
     
     def __init__(self, config_path: str = 'config.yaml', 
-                 analysis_config_path: str = 'analysis.yaml'):
+                 analysis_config_path: str = 'analysis.yaml',
+                 output_dir: str = None):
         """
         Initialize orchestrator with configuration.
         
         Args:
             config_path: Path to system configuration file
             analysis_config_path: Path to analysis configuration file
+            output_dir: Path to output directory
         """
         self.config = load_config(config_path)
         self.analysis_config = load_config(analysis_config_path)
         
-        self.setup_environment()
+        self.setup_environment(output_dir)
         self.initialize_components()
     
-    def setup_environment(self):
+    def setup_environment(self, output_dir: str):
         """Set up logging, directories, and environment."""
         # Setup logging
         setup_logging(self.config.get('logging', {}))
         logger.info("Analysis orchestrator initialized")
         
         # Create timestamped output directory
-        output_config = self.config.get('output', {})
-        base_dir = output_config.get('base_dir', 'outputs')
-        self.output_dir = create_timestamped_output_dir(base_dir, 'analysis')
+        if output_dir:
+            self.output_dir = output_dir
+        else:
+            self.output_dir = create_organized_output_dir(
+                analysis_type="main",
+                legacy=self.config.get('legacy', False)
+            )
         logger.info(f"Created timestamped output directory: {self.output_dir}")
     
     def initialize_components(self):
@@ -376,35 +382,54 @@ if __name__ == "__main__":
                         help='Path to system configuration file')
     parser.add_argument('--analysis-config', default='../analysis.yaml',
                         help='Path to analysis configuration file')
-    parser.add_argument('--data', required=True,
-                        help='Path to data file to analyze')
+    parser.add_argument('--csv', required=True,
+                        help='Path to CSV data file to analyze')
     parser.add_argument('--batch', action='store_true',
                         help='Run batch analysis on multiple files')
+    parser.add_argument('--output-dir', default=None,
+                        help='Output directory (auto-generated if not specified)')
+    parser.add_argument('--legacy', action='store_true',
+                        help='Use legacy timestamped directory format')
     
     args = parser.parse_args()
     
     try:
+        # Create output directory with standardized naming
+        if args.output_dir:
+            output_dir = args.output_dir
+        else:
+            output_dir = create_organized_output_dir(
+                analysis_type="main",
+                legacy=args.legacy
+            )
+        
+        print(f"Output directory: {output_dir}")
+        
         # Initialize orchestrator
-        orchestrator = AnalysisOrchestrator(args.config, args.analysis_config)
+        orchestrator = AnalysisOrchestrator(args.config, args.analysis_config, str(output_dir))
         
         if args.batch:
-            # Batch mode - treat data as list of files
-            data_sources = [args.data]  # For now, single file
-            results = orchestrator.run_batch_analysis(data_sources)
-            
-            # Print summary for each source
-            for source, result in results.items():
-                print(f"\n{'='*20} {source} {'='*20}")
-                print_summary(result)
+            # Process multiple CSV files
+            csv_files = args.csv.split(',')
+            for csv_file in csv_files:
+                print(f"\nProcessing: {csv_file.strip()}")
+                results = orchestrator.run_analysis(csv_file.strip())
+                print(f"Analysis completed for {csv_file.strip()}")
         else:
-            # Single file mode
-            results = orchestrator.run_analysis(args.data)
-            print_summary(results)
+            # Process single CSV file
+            results = orchestrator.run_analysis(args.csv)
+            print("Analysis completed successfully!")
             
-            # Print output directory info
-            print(f"\nAll outputs saved to: {orchestrator.output_dir}")
-        
+            # Print summary
+            if 'analysis_results' in results:
+                print(f"\nAnalyzers run: {len(results['analysis_results'])}")
+            if 'model_results' in results:
+                print(f"Models trained: {len(results['model_results'])}")
+            if 'output_results' in results and 'plots' in results['output_results']:
+                print(f"Visualizations created: {len(results['output_results']['plots'])}")
+    
     except Exception as e:
-        print(f"Analysis failed: {e}")
+        print(f"Error: {e}")
         import traceback
-        traceback.print_exc() 
+        traceback.print_exc()
+        exit(1) 

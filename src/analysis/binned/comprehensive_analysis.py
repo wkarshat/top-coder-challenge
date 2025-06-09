@@ -624,13 +624,13 @@ class ComprehensiveBinnedAnalyzer:
             ax12.set_title('Linear Formula Coefficients', pad=20)
         
         plt.tight_layout()
-        plt.savefig(Path(output_dir) / 'comprehensive_analysis_dashboard.png', 
+        plt.savefig(Path(output_dir) / 'dashboard.png', 
                    dpi=100, bbox_inches='tight')
         plt.close()
         
-        self.analysis_results['visualizations'].append('comprehensive_analysis_dashboard.png')
+        self.analysis_results['visualizations'].append('dashboard.png')
         
-        return str(Path(output_dir) / 'comprehensive_analysis_dashboard.png')
+        return str(Path(output_dir) / 'dashboard.png')
     
     def generate_comprehensive_report(self):
         """Generate comprehensive analysis report."""
@@ -768,37 +768,36 @@ class ComprehensiveBinnedAnalyzer:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Comprehensive Binned Analysis with Linear Formula Fitting')
+    parser = argparse.ArgumentParser(description='Comprehensive Binned Analysis (8 Regions)')
     parser.add_argument('--csv', default='public.csv', help='Input CSV file (default: public.csv)')
-    parser.add_argument('--output-dir', default='outputs/analysis_143208', 
-                       help='Output directory')
-    parser.add_argument('--days-threshold', type=int, default=7,
-                       help='Days threshold (default: 7)')
-    parser.add_argument('--miles-threshold', type=int, default=700,
-                       help='Miles threshold (default: 700)')
-    parser.add_argument('--receipts-threshold', type=int, default=1300,
-                       help='Receipts threshold (default: 1300)')
-    parser.add_argument('--max-degree', type=int, default=3,
-                       help='Maximum polynomial degree (default: 3)')
+    parser.add_argument('--output-dir', default=None, 
+                       help='Output directory (auto-generated if not specified)')
+    parser.add_argument('--max-regions', type=int, default=8,
+                       help='Maximum regions to analyze (default: 8)')
+    parser.add_argument('--legacy', action='store_true',
+                       help='Use legacy timestamped directory format')
     
     args = parser.parse_args()
     
-    # Configure analysis
-    config = {
-        'days_threshold': args.days_threshold,
-        'miles_threshold': args.miles_threshold,
-        'receipts_threshold': args.receipts_threshold,
-        'polynomial_degrees': list(range(1, args.max_degree + 1)),
-        'include_interactions': True,
-        'include_ratios': True
-    }
+    print("Comprehensive Binned Analysis (8 Regions)")
+    print("=" * 50)
     
-    print("Comprehensive Binned Analysis with Linear Formula Fitting")
-    print("=" * 80)
-    print(f"Configuration: {config}")
+    # Create output directory with standardized naming
+    if args.output_dir:
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        from core.utils import create_organized_output_dir
+        output_dir = create_organized_output_dir(
+            analysis_type="comprehensive",
+            legacy=args.legacy,
+            regions=args.max_regions
+        )
     
-    # Initialize analyzer
-    analyzer = ComprehensiveBinnedAnalyzer(config)
+    print(f"Output directory: {output_dir}")
+    
+    # Initialize analyzer with default config
+    analyzer = ComprehensiveBinnedAnalyzer()
     
     # Load and prepare data
     df, region_labels = analyzer.load_and_prepare_data(args.csv)
@@ -809,21 +808,23 @@ def main():
     # Compare and contrast models
     analyzer.compare_and_contrast_models()
     
-    # Create visualizations
-    viz_file = analyzer.create_comprehensive_visualizations(df, args.output_dir)
-    print(f"Comprehensive visualization saved to: {viz_file}")
+    # Create visualizations with standardized name
+    viz_file = analyzer.create_comprehensive_visualizations(df, output_dir)
+    print(f"Visualization saved to: {viz_file}")
     
     # Print results
     analyzer.print_comprehensive_results()
     
-    # Generate and save comprehensive report
+    # Generate and save report with standardized naming
     report = analyzer.generate_comprehensive_report()
     
-    output_file = Path(args.output_dir) / 'comprehensive_analysis_results.json'
-    with open(output_file, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(report, f, indent=2, default=str)
+    # Use standardized file saving
+    from core.utils import save_standardized_results
+    saved_files = save_standardized_results(report, output_dir, "comprehensive")
     
-    print(f"\nComprehensive analysis results saved to: {output_file}")
+    print(f"\nComprehensive analysis results saved to: {saved_files['results']}")
+    if 'summary' in saved_files:
+        print(f"Summary saved to: {saved_files['summary']}")
     
     return analyzer, df, report
 

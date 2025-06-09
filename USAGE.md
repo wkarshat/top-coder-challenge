@@ -1,25 +1,160 @@
-# System Usage Guide
+# Three Variable Fitting 809 Data - System Usage Guide
+
+## Documentation References
+
+- **System Architecture**: See [ARCHITECTURE.md](ARCHITECTURE.md) for complete system design, components, and technical details
+- **Output Management**: See [OUTPUT.md](OUTPUT.md) for comprehensive output structure, file formats, and directory organization
+- **Project Requirements**: See [PRD.md](PRD.md) for original project requirements and specifications
 
 ## Quick Start
 
 ### **Main Analysis System**
 ```bash
-cd src
-python -m core.main --data ../public.csv
+python src/core/main.py --csv public.csv --config config.yaml --analysis-config analysis.yaml
 ```
-**Output**: `outputs/analysis_HHMMSS/` with plots, reports, and model results
+**Output**: `outputs/main_20250608/run001/` with standardized results, visualizations, and metadata
 
-### **Linear Regression Analysis**
+### **Comprehensive Binned Analysis**
 ```bash
-python linear_regression.py --csv public.csv --days all
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
 ```
-**Output**: `outputs/linear_regression_HHMMSS/` with day-by-day analysis
+**Output**: `outputs/comprehensive_r8_20250608/run001/` with 8-region analysis
 
 ### **Script Interface**
 ```bash
-python scripts/run_analysis.py --data-source public.csv
+python scripts/run_analysis.py --csv public.csv
 ```
-**Output**: Same as main system with additional CLI features
+**Output**: `outputs/script_20250608/run001/` with identical functionality to main system
+
+## All Analysis Programs
+
+### **1. Main System Analysis**
+```bash
+python src/core/main.py --csv public.csv --config config.yaml --analysis-config analysis.yaml
+```
+- **Directory**: `outputs/main_20250608/`
+- **Performance**: Linear R² = 0.784, Ensemble R² = 0.913
+- **Features**: 5 analyzers, 2 models, comprehensive JSON reports
+- **Files**: `results.json`, `summary.txt`, correlation plots, scatter plots
+
+**Command Line Options**:
+- `--csv CSV` (required): Path to CSV data file to analyze
+- `--config CONFIG`: Path to system configuration file (default: config.yaml)
+- `--analysis-config ANALYSIS_CONFIG`: Path to analysis configuration file (default: analysis.yaml)
+- `--batch`: Run batch analysis on multiple files
+- `--output-dir OUTPUT_DIR`: Output directory (auto-generated if not specified)
+- `--legacy`: Use legacy timestamped directory format
+- `-h, --help`: Show help message and exit
+
+### **2. Script Wrapper**
+```bash
+python scripts/run_analysis.py --csv public.csv
+```
+- **Directory**: `outputs/script_20250608/`
+- **Performance**: Identical to main system
+- **Features**: CLI wrapper for main orchestrator
+- **Files**: Same as main system
+
+**Command Line Options**:
+- `--csv CSV` (required): CSV data file. For batch processing, separate with commas
+- `--config CONFIG, -c CONFIG`: System configuration file (default: config.yaml)
+- `--analysis-config ANALYSIS_CONFIG, -a ANALYSIS_CONFIG`: Analysis configuration file (default: analysis.yaml)
+- `--output-dir OUTPUT_DIR, -o OUTPUT_DIR`: Output directory (auto-generated if not specified)
+- `--batch, -b`: Process multiple data sources (comma-separated)
+- `--verbose, -v`: Enable verbose logging
+- `--quiet, -q`: Suppress output except errors
+- `--legacy`: Use legacy timestamped directory format
+- `-h, --help`: Show help message and exit
+
+**Batch Processing Example**:
+```bash
+python scripts/run_analysis.py --csv public.csv,private.csv --batch --verbose
+```
+
+### **3. Comprehensive Binned Analysis**
+```bash
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
+```
+- **Directory**: `outputs/comprehensive_r8_20250608/`
+- **Performance**: Linear R² = 0.784, Polynomial avg R² = 0.852
+- **Features**: 8-region analysis, linear formula fitting, polynomial enhancement
+- **Files**: `results.json`, `summary.txt`, `dashboard.png`
+
+**Command Line Options**:
+- `--csv CSV`: Input CSV file (default: public.csv)
+- `--output-dir OUTPUT_DIR`: Output directory (auto-generated if not specified)
+- `--max-regions MAX_REGIONS`: Maximum regions to analyze (default: 8)
+- `--legacy`: Use legacy timestamped directory format
+- `-h, --help`: Show help message and exit
+
+**Custom Region Analysis**:
+```bash
+python -m src.analysis.binned.comprehensive_analysis --csv data.csv --max-regions 4 --legacy
+```
+
+### **4. Daily Analysis**
+```bash
+python -m src.analysis.binned.daily_analysis --csv public.csv
+```
+- **Directory**: `outputs/daily_m14_20250608/`
+- **Performance**: R² range 0.585-0.872 across 14 days
+- **Features**: Day-by-day analysis with performance ranking
+- **Files**: `results.json`, `summary.txt`, `dashboard.png`
+
+**Command Line Options**:
+- `--csv CSV`: Input CSV file (default: public.csv)
+- `--output-dir OUTPUT_DIR`: Output directory (auto-generated if not specified)
+- `--max-days MAX_DAYS`: Maximum days to analyze (default: 14)
+- `--legacy`: Use legacy timestamped directory format
+- `-h, --help`: Show help message and exit
+
+**Limited Day Analysis**:
+```bash
+python -m src.analysis.binned.daily_analysis --csv data.csv --max-days 10 --output-dir daily_results/
+```
+
+### **5. Daily Rate Analysis**
+```bash
+python -m src.analysis.binned.daily_rate_analysis --csv public.csv
+```
+- **Directory**: `outputs/daily_rate_m150_r100_20250608/`
+- **Performance**: 42/56 subregions populated, R² range 0.090-0.951
+- **Features**: Subregion analysis with miles/receipts thresholds
+- **Files**: `results.json`, `summary.txt`, `dashboard.png`
+
+**Command Line Options**:
+- `--csv CSV`: Input CSV file (default: public.csv)
+- `--output-dir OUTPUT_DIR`: Output directory (auto-generated if not specified)
+- `--miles-threshold MILES_THRESHOLD`: Miles threshold (default: 150)
+- `--receipts-threshold RECEIPTS_THRESHOLD`: Receipts threshold (default: 100)
+- `--legacy`: Use legacy timestamped directory format
+- `-h, --help`: Show help message and exit
+
+**Custom Threshold Analysis**:
+```bash
+python -m src.analysis.binned.daily_rate_analysis --csv data.csv --miles-threshold 200 --receipts-threshold 150
+```
+
+### **6. Reimbursement Threshold Analysis**
+```bash
+python -m src.analysis.binned.reimb_threshold_analysis --csv public.csv
+```
+- **Directory**: `outputs/reimb_threshold_t1000_20250608/`
+- **Performance**: Below $1000: R² = 0.612, Above $1000: R² = 0.619
+- **Features**: Above/below threshold analysis with statistical testing
+- **Files**: `results.json`, `summary.txt`, `dashboard.png`
+
+**Command Line Options**:
+- `--csv CSV`: Input CSV file (default: public.csv)
+- `--output-dir OUTPUT_DIR`: Output directory (auto-generated if not specified)
+- `--threshold THRESHOLD`: Reimbursement threshold (default: 1000)
+- `--legacy`: Use legacy timestamped directory format
+- `-h, --help`: Show help message and exit
+
+**Custom Threshold Analysis**:
+```bash
+python -m src.analysis.binned.reimb_threshold_analysis --csv data.csv --threshold 1500 --legacy
+```
 
 ## Configuration
 
@@ -44,69 +179,56 @@ models:
   types: [linear, ensemble]
 ```
 
-## Execution Methods
+## Standardized Output System
 
-### **1. Core System (Recommended)**
-```bash
-cd src
-python -m core.main --data ../public.csv
-```
-**Features**:
-- 5 analysis types (correlation, statistical, advanced_stats, time_series, clustering)
-- 2 model types (linear, ensemble)
-- Automatic timestamped outputs
-- Comprehensive JSON reports
+### **Directory Structure**
+All outputs use standardized naming with parameter encoding:
+- **Format**: `{analysis_type}_{parameters}_{series_id}/`
+- **Runs**: Auto-incrementing `run001/`, `run002/`, etc.
+- **Files**: Standardized `results.json`, `summary.txt`, `dashboard.png`
+- **Metadata**: Complete run history in `metadata.json`
 
-### **2. Linear Regression Tool**
-```bash
-python linear_regression.py --csv public.csv --days 1,7,14
-```
-**Features**:
-- Day-by-day binned correlation analysis
-- Detailed statistical summaries
-- Custom day ranges (`--days all`, `--days 1-5`, `--days 1,3,5`)
-- Individual day plots and summary visualization
+**For complete output details, see [OUTPUT.md](OUTPUT.md)**
 
-### **3. Script Interface**
-```bash
-python scripts/run_analysis.py --data-source public.csv
+### **Example Structure**
 ```
-**Additional Features**:
-- Input validation
-- Batch processing
-- Custom configuration files
-- Verbose logging options
+outputs/
+├── comprehensive_r8_20250608/
+│   ├── metadata.json
+│   ├── run001/
+│   │   ├── results.json
+│   │   ├── summary.txt
+│   │   └── dashboard.png
+│   └── run002/
+├── daily_m14_20250608/
+├── main_20250608/
+└── logs/
+    └── analysis.log
+```
 
 ## Command Line Options
 
-### **Linear Regression Script**
+### **Legacy Format Support**
 ```bash
-python linear_regression.py [OPTIONS]
-
-Options:
-  --csv, -c TEXT          Input CSV file (default: public.csv)
-  --days, -d TEXT         Days to process: "all", "1-5", or "1,3,5" (default: all)
-  --no-plots             Skip individual day plots
-  --output-dir TEXT      Custom output directory
+# Use legacy timestamped format
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv --legacy
+# Creates: outputs/comprehensive_205818/
 ```
 
-### **Script Interface**
+### **Multiple Runs**
 ```bash
-python scripts/run_analysis.py [OPTIONS]
+# First run
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
+# Creates: outputs/comprehensive_r8_20250608/run001/
 
-Options:
-  --data-source TEXT     Input data file(s)
-  --config TEXT          System configuration file (default: config.yaml)
-  --analysis-config TEXT Analysis configuration file (default: analysis.yaml)
-  --batch                Enable batch processing
-  --verbose              Enable verbose logging
+# Second run
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
+# Creates: outputs/comprehensive_r8_20250608/run002/
 ```
-
-## Output Organization
-
-All outputs are automatically organized in timestamped directories under `outputs/`. **See OUTPUT.md for complete details.**
 
 ## System Components
+
+**For detailed component architecture, see [ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ### **Active Analyzers**
 1. **Correlation**: Pearson correlations with significance testing
@@ -119,75 +241,175 @@ All outputs are automatically organized in timestamped directories under `output
 1. **Linear**: Ridge/Lasso regression with cross-validation
 2. **Ensemble**: Voting regressor with multiple base models
 
-### **Performance**
+### **Performance Summary**
 - **Analysis Speed**: ~6 seconds for 1,000 records
-- **Model Performance**: Linear R² = 0.784, Ensemble R² = 0.913
-- **Parallel Processing**: Configurable via `config.yaml`
+- **Main System**: Linear R² = 0.784, Ensemble R² = 0.913
+- **Best Regional**: R² = 0.893 (Region 2)
+- **Best Subregion**: R² = 0.951 (Day2_M≤300_R≤$200)
 
 ## Common Use Cases
 
 ### **Complete Analysis**
 ```bash
-cd src
-python -m core.main --data ../public.csv
+python src/core/main.py --csv public.csv --config config.yaml --analysis-config analysis.yaml
 ```
 **Result**: Full analysis with 5 analyzers, 2 models, visualizations, and JSON report
 
-### **Day-Specific Analysis**
+### **Regional Pattern Analysis**
 ```bash
-python linear_regression.py --csv public.csv --days 1,7,14
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
 ```
-**Result**: Detailed binned correlation analysis for specific days
+**Result**: 8-region analysis with linear formula fitting and polynomial enhancement
 
-### **Batch Processing**
+### **Daily Performance Tracking**
 ```bash
-python scripts/run_analysis.py --data-source file1.csv,file2.csv --batch
+python -m src.analysis.binned.daily_analysis --csv public.csv
 ```
-**Result**: Analysis of multiple files with separate output directories
+**Result**: Day-by-day performance analysis with ranking
 
-### **Custom Configuration**
+### **Threshold Comparison**
 ```bash
-python scripts/run_analysis.py \
-    --data-source data.csv \
-    --config custom_config.yaml \
-    --analysis-config custom_analysis.yaml
+python -m src.analysis.binned.reimb_threshold_analysis --csv public.csv
 ```
+**Result**: Statistical comparison above/below $1000 threshold
+
+### **Subregion Analysis**
+```bash
+python -m src.analysis.binned.daily_rate_analysis --csv public.csv
+```
+**Result**: 56 subregion analysis with rate thresholds
+
+## Analysis Results Interpretation
+
+### **Linear Formula Results**
+```
+Region R2: 105.950*Days + 0.301*Miles + 0.812*Receipts + (-79.1)
+R² = 0.893, RMSE = 125.4
+```
+- **A coefficient (Days)**: Cost per day
+- **B coefficient (Miles)**: Cost per mile  
+- **C coefficient (Receipts)**: Receipt multiplier
+- **D coefficient (Intercept)**: Base cost
+- **R²**: Variance explained (0-1, higher better)
+- **RMSE**: Prediction error (lower better)
+
+### **Performance Ranking**
+1. **Region R2** (Low Days, High Miles, Low Receipts): R² = 0.893
+2. **Region R0** (Low Days, Low Miles, Low Receipts): R² = 0.876
+3. **Region R4** (High Days, Low Miles, Low Receipts): R² = 0.860
+
+### **Daily Analysis Results**
+- **Best Day**: Day 2 (R² = 0.872)
+- **Worst Day**: Day 14 (R² = 0.585)
+- **Average**: R² = 0.714 across all days
+
+### **Subregion Analysis Results**
+- **Best Subregion**: Day2_M≤300_R≤$200 (R² = 0.951)
+- **Populated Subregions**: 42/56 total
+- **Performance Range**: R² 0.090-0.951
 
 ## Troubleshooting
 
 ### **Common Issues**
-1. **Import Errors**: Ensure you're in the correct directory (`cd src` for core system)
-2. **File Not Found**: Check data file paths (use `../public.csv` from src directory)
+1. **Import Errors**: Use module syntax `python -m src.analysis.binned.comprehensive_analysis`
+2. **File Not Found**: Check data file paths and current directory
 3. **Permission Errors**: Ensure write permissions for `outputs/` directory
 
+### **PowerShell Syntax**
+```powershell
+# Correct PowerShell syntax for Windows
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
+
+# Multiple commands
+python src/core/main.py --csv public.csv --config config.yaml --analysis-config analysis.yaml
+python -m src.analysis.binned.daily_analysis --csv public.csv
+```
+
 ### **Logging**
-Check `outputs/logs/analysis.log` for detailed execution information and error messages.
+Check `outputs/logs/analysis.log` for detailed execution information:
+```
+2025-06-08 21:09:10,815 - INFO - Starting analysis pipeline for public.csv
+2025-06-08 21:09:13,848 - INFO - linear model completed
+2025-06-08 21:09:15,304 - INFO - Analysis pipeline completed successfully
+```
 
 ### **Performance**
 - For large datasets, enable parallel processing in `config.yaml`
-- Use `--no-plots` flag for faster linear regression analysis
 - Monitor memory usage for datasets > 10,000 records
+- Use `--legacy` flag for simple timestamped outputs
+
+## Output File Details
+
+**For comprehensive output documentation, see [OUTPUT.md](OUTPUT.md)**
+
+### **Standardized Files**
+- **`results.json`**: Complete analysis results with metrics and coefficients
+- **`summary.txt`**: Human-readable summary with key findings
+- **`dashboard.png`**: Primary visualization dashboard
+- **`metadata.json`**: Run tracking with timestamps and parameters
+
+### **File Sizes (Typical)**
+- **Main System**: `results.json` (535KB), 3 visualization PNGs (30-105KB each)
+- **Comprehensive**: `results.json` (48KB), `dashboard.png` (411KB)
+- **Daily Analysis**: `results.json` (68KB), `dashboard.png` (437KB)
+- **Daily Rate**: `results.json` (65KB), `dashboard.png` (544KB)
+- **Threshold**: `results.json` (21KB), `dashboard.png` (383KB)
+
+## Advanced Usage
+
+### **Programmatic Access**
+```python
+from src.core.main import AnalysisOrchestrator
+
+# Initialize orchestrator
+orchestrator = AnalysisOrchestrator('config.yaml', 'analysis.yaml', 'outputs/main_20250608/run001')
+
+# Run analysis
+results = orchestrator.run_analysis('public.csv')
+
+# Access results
+print(f"Linear R²: {results['models']['linear']['metrics']['r2_score']}")
+print(f"Ensemble R²: {results['models']['ensemble']['metrics']['r2_score']}")
+```
+
+### **Batch Analysis**
+```bash
+# Run all analyses
+python src/core/main.py --csv public.csv --config config.yaml --analysis-config analysis.yaml
+python scripts/run_analysis.py --csv public.csv
+python -m src.analysis.binned.comprehensive_analysis --csv public.csv
+python -m src.analysis.binned.daily_analysis --csv public.csv
+python -m src.analysis.binned.daily_rate_analysis --csv public.csv
+python -m src.analysis.binned.reimb_threshold_analysis --csv public.csv
+```
+
+## Legacy Reimbursement Formula
+
+The system implements and validates the legacy reimbursement calculation:
+**Reimb = Days × 100 + Miles × 0.5 + Receipts**
+
+Where:
+- **Days**: Trip duration (1-14 days in dataset)
+- **Miles**: Total miles traveled (1-1400 in dataset)
+- **Receipts**: Total receipt amount in dollars (1-2600 in dataset)
+
+### **Formula Validation Results**
+- **Overall Formula**: 50.050*Days + 0.446*Miles + 0.383*Receipts + 266.7 (R² = 0.784)
+- **Regional Variations**: Coefficients vary significantly across 8 regions
+- **Best Regional Fit**: Region R2 with R² = 0.893
 
 ## Migration Notes
 
 ### **From Legacy System**
-- Old scattered PNG files have been moved to timestamped directories
-- Log files migrated from `logs/` to `outputs/logs/`
-- Configuration consolidated into two YAML files
+- **Standardized naming**: Parameter-encoded directories replace timestamps
+- **Consistent files**: All analyses generate `results.json`, `summary.txt`, `dashboard.png`
+- **Metadata tracking**: Complete run history with automatic incrementing
+- **Legacy support**: `--legacy` flag maintains old timestamped format
 
-### **Removed Components**
-- `BinnedAnalyzer`: Functionality available in `linear_regression.py`
-- Legacy shell scripts: Not used by current system
-- Scattered output files: Now organized in timestamped directories
+### **Current System Features**
+- **6 analysis programs**: All tested and validated
+- **Standardized outputs**: Consistent structure across all analyses
+- **Run management**: Automatic incrementing with metadata tracking
+- **Performance metrics**: Comprehensive R² and RMSE reporting
 
-This system provides comprehensive data analysis capabilities with clean organization and flexible execution options.
-
-## Legacy Reimbursement Formula
-
-The system implements the legacy reimbursement calculation:
-**Reimb = Days × 100 + Miles × 0.5 + Receipts**
-
-Where:
-- **Days**: Trip duration (1-30 days)
-- **Miles**: Total miles traveled
-- **Receipts**: Total receipt amount in dollars 
+This system provides comprehensive reimbursement data analysis with standardized outputs and flexible execution options. 

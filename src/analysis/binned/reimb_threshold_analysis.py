@@ -597,13 +597,13 @@ class ReimbThresholdAnalyzer:
                  fontsize=10, verticalalignment='top', fontfamily='monospace')
         
         plt.tight_layout()
-        plt.savefig(Path(output_dir) / 'reimb_threshold_analysis_dashboard.png', 
+        plt.savefig(Path(output_dir) / 'dashboard.png',
                    dpi=100, bbox_inches='tight')
         plt.close()
         
-        self.analysis_results['visualizations'].append('reimb_threshold_analysis_dashboard.png')
+        self.analysis_results['visualizations'].append('dashboard.png')
         
-        return str(Path(output_dir) / 'reimb_threshold_analysis_dashboard.png')
+        return str(Path(output_dir) / 'dashboard.png')
     
     def print_threshold_results(self):
         """Print comprehensive threshold analysis results."""
@@ -683,18 +683,31 @@ class ReimbThresholdAnalyzer:
 def main():
     parser = argparse.ArgumentParser(description='Reimbursement Threshold Analysis')
     parser.add_argument('--csv', default='public.csv', help='Input CSV file (default: public.csv)')
-    parser.add_argument('--output-dir', default='outputs/reimb_threshold_analysis', 
-                       help='Output directory')
+    parser.add_argument('--output-dir', default=None, 
+                       help='Output directory (auto-generated if not specified)')
     parser.add_argument('--threshold', type=float, default=1000,
                        help='Reimbursement threshold (default: 1000)')
+    parser.add_argument('--legacy', action='store_true',
+                       help='Use legacy timestamped directory format')
     
     args = parser.parse_args()
     
     print(f"Reimbursement Threshold Analysis (${args.threshold})")
     print("=" * 60)
     
-    # Create output directory
-    Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+    # Create output directory with standardized naming
+    if args.output_dir:
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        from core.utils import create_organized_output_dir
+        output_dir = create_organized_output_dir(
+            analysis_type="reimb_threshold",
+            legacy=args.legacy,
+            threshold=int(args.threshold)
+        )
+    
+    print(f"Output directory: {output_dir}")
     
     # Initialize analyzer
     analyzer = ReimbThresholdAnalyzer(args.threshold)
@@ -712,20 +725,22 @@ def main():
     analyzer.compare_threshold_subsets()
     
     # Create visualizations
-    viz_file = analyzer.create_threshold_visualizations(df, args.output_dir)
+    viz_file = analyzer.create_threshold_visualizations(df, output_dir)
     print(f"Threshold visualization saved to: {viz_file}")
     
     # Print results
     analyzer.print_threshold_results()
     
-    # Generate and save report
+    # Generate and save report with standardized naming
     report = analyzer.generate_threshold_report()
     
-    output_file = Path(args.output_dir) / 'reimb_threshold_analysis_results.json'
-    with open(output_file, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(report, f, indent=2, default=str)
+    # Use standardized file saving
+    from core.utils import save_standardized_results
+    saved_files = save_standardized_results(report, output_dir, "reimb_threshold")
     
-    print(f"\nThreshold analysis results saved to: {output_file}")
+    print(f"\nThreshold analysis results saved to: {saved_files['results']}")
+    if 'summary' in saved_files:
+        print(f"Summary saved to: {saved_files['summary']}")
     
     return analyzer, df, report
 

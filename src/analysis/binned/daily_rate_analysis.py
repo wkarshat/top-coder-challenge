@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Daily Rate Analysis: 56 Subregions (14 Days × 4 Regions per Day)
+Days Rate Analysis: 56 Subregions (14 Days × 4 Regions per Day)
 
 Bins data into 56 subregions based on:
 - Days: 1-14 individual days
@@ -28,8 +28,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-class DailyRateAnalyzer:
-    """Daily rate analysis for 56 subregions."""
+class DaysRateAnalyzer:
+    """Days rate analysis for 56 subregions."""
     
     def __init__(self, miles_per_day_threshold=100, receipts_per_day_threshold=100):
         """Initialize with daily rate thresholds."""
@@ -759,46 +759,39 @@ class DailyRateAnalyzer:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Daily Rate Analysis (56 Subregions)')
+    parser = argparse.ArgumentParser(description='Days Rate Analysis (56 Subregions)')
     parser.add_argument('--csv', default='public.csv', help='Input CSV file (default: public.csv)')
     parser.add_argument('--output-dir', default=None, 
-                       help='Output directory (default: auto-generated series directory)')
-    parser.add_argument('--miles-threshold', type=int, default=100,
-                       help='Miles per day threshold (default: 100)')
+                       help='Output directory (auto-generated if not specified)')
+    parser.add_argument('--miles-threshold', type=int, default=150,
+                       help='Miles threshold (default: 150)')
     parser.add_argument('--receipts-threshold', type=int, default=100,
-                       help='Receipts per day threshold (default: 100)')
-    parser.add_argument('--series-mode', action='store_true',
-                       help='Use series-based output organization (recommended)')
-    parser.add_argument('--series-id', default=None,
-                       help='Series identifier (default: current date)')
+                       help='Receipts threshold (default: 100)')
+    parser.add_argument('--legacy', action='store_true',
+                       help='Use legacy timestamped directory format')
     
     args = parser.parse_args()
     
-    print("Daily Rate Analysis (56 Subregions)")
-    print("=" * 50)
+    print(f"Days Rate Analysis (Miles: {args.miles_threshold}, Receipts: {args.receipts_threshold})")
+    print("=" * 70)
     
-    # Import series utilities
-    import sys
-    sys.path.insert(0, str(Path(__file__).parent.parent.parent / "src"))
-    from core.utils import create_series_output_dir, create_timestamped_output_dir
-    
-    # Create output directory
-    if args.output_dir is None:
-        if args.series_mode:
-            # Use new series-based organization
-            series_name = f"daily_rate_m{args.miles_threshold}_r{args.receipts_threshold}"
-            args.output_dir = create_series_output_dir(series_name, args.series_id)
-            print(f"Using series mode: {args.output_dir}")
-        else:
-            # Use legacy timestamped format
-            args.output_dir = create_timestamped_output_dir("daily_rate_analysis")
-            print(f"Using legacy mode: {args.output_dir}")
+    # Create output directory with standardized naming
+    if args.output_dir:
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
     else:
-        # User-specified directory
-        Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+        from core.utils import create_organized_output_dir
+        output_dir = create_organized_output_dir(
+            analysis_type="daily_rate",
+            legacy=args.legacy,
+            miles=args.miles_threshold,
+            receipts=args.receipts_threshold
+        )
+    
+    print(f"Output directory: {output_dir}")
     
     # Initialize analyzer
-    analyzer = DailyRateAnalyzer(args.miles_threshold, args.receipts_threshold)
+    analyzer = DaysRateAnalyzer(args.miles_threshold, args.receipts_threshold)
     
     # Load and prepare data
     df = analyzer.load_and_prepare_data(args.csv)
@@ -809,20 +802,22 @@ def main():
     analyzer.analyze_daily_patterns(df)
     
     # Create visualizations
-    viz_file = analyzer.create_comprehensive_visualizations(df, args.output_dir)
+    viz_file = analyzer.create_comprehensive_visualizations(df, output_dir)
     print(f"Visualization saved to: {viz_file}")
     
     # Print results
     analyzer.print_comprehensive_results()
     
-    # Generate and save report
+    # Generate and save report with standardized naming
     report = analyzer.generate_comprehensive_report()
     
-    output_file = Path(args.output_dir) / 'results.json'
-    with open(output_file, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(report, f, indent=2, default=str)
+    # Use standardized file saving
+    from core.utils import save_standardized_results
+    saved_files = save_standardized_results(report, output_dir, "daily_rate")
     
-    print(f"\nDaily rate analysis results saved to: {output_file}")
+    print(f"\nDaily rate analysis results saved to: {saved_files['results']}")
+    if 'summary' in saved_files:
+        print(f"Summary saved to: {saved_files['summary']}")
     
     return analyzer, df, report
 

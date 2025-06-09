@@ -44,33 +44,117 @@ def load_config(config_path: str) -> Dict[str, Any]:
         raise RuntimeError(f"Failed to load config {config_path}: {e}")
 
 
-def create_timestamped_output_dir(base_dir: str = 'outputs', 
-                                 prefix: str = 'analysis') -> str:
+def create_organized_output_dir(analysis_type: str, base_dir: str = "outputs", 
+                               legacy: bool = False, **params) -> Path:
     """
-    Create a timestamped output directory for organizing analysis results.
+    Create organized output directory with standardized naming.
     
     Args:
-        base_dir: Base output directory (default: 'outputs')
-        prefix: Prefix for the timestamped directory (default: 'analysis')
+        analysis_type: Type of analysis (comprehensive, daily, daily_rate, etc.)
+        base_dir: Base output directory
+        legacy: Use legacy timestamped format if True
+        **params: Additional parameters for directory naming
         
     Returns:
-        Path to the created timestamped directory
+        Path to the created output directory
     """
-    timestamp = datetime.now().strftime('%H%M%S')
+    if legacy:
+        # Legacy format: {analysis_type}_{HHMMSS}/
+        timestamp = datetime.now().strftime("%H%M%S")
+        output_dir = Path(base_dir) / f"{analysis_type}_{timestamp}"
+        output_dir.mkdir(parents=True, exist_ok=True)
+        return output_dir
     
-    # Ensure base_dir is relative to project root, not src
-    if not Path(base_dir).is_absolute():
-        # If we're in src directory, go up one level
-        current_dir = Path.cwd()
-        if current_dir.name == 'src':
-            base_dir = f"../{base_dir}"
+    # New organized format: {analysis_type}_{params}_{YYYYMMDD}/run001/
+    date_id = datetime.now().strftime("%Y%m%d")
     
-    timestamped_dir = f"{base_dir}/{prefix}_{timestamp}"
+    # Build directory name with parameters
+    dir_parts = [analysis_type]
+    for key, value in params.items():
+        if key.startswith('_'):  # Skip internal parameters
+            continue
+        dir_parts.append(f"{key[0]}{value}")  # e.g., m150, r100
+    dir_parts.append(date_id)
     
-    # Create the timestamped directory (no subdirectories)
-    ensure_directories([timestamped_dir])
+    series_dir = Path(base_dir) / "_".join(dir_parts)
+    series_dir.mkdir(parents=True, exist_ok=True)
     
-    return timestamped_dir
+    # Find next run number
+    existing_runs = [d for d in series_dir.iterdir() if d.is_dir() and d.name.startswith('run')]
+    if existing_runs:
+        run_numbers = [int(d.name[3:]) for d in existing_runs if d.name[3:].isdigit()]
+        next_run = max(run_numbers) + 1 if run_numbers else 1
+    else:
+        next_run = 1
+    
+    run_dir = series_dir / f"run{next_run:03d}"
+    run_dir.mkdir(parents=True, exist_ok=True)
+    
+    # Create metadata.json
+    metadata_file = series_dir / "metadata.json"
+    if not metadata_file.exists():
+        metadata = {
+            "analysis_type": analysis_type,
+            "series_id": date_id,
+            "parameters": params,
+            "created": datetime.now().isoformat(),
+            "runs": []
+        }
+    else:
+        with open(metadata_file, 'r') as f:
+            metadata = json.load(f)
+    
+    # Add current run to metadata
+    metadata["runs"].append({
+        "run_number": next_run,
+        "run_dir": str(run_dir),
+        "timestamp": datetime.now().isoformat()
+    })
+    
+    with open(metadata_file, 'w') as f:
+        json.dump(metadata, f, indent=2)
+    
+    return run_dir
+
+
+def save_standardized_results(results: Dict[str, Any], output_dir: Path, 
+                            analysis_type: str = None) -> Dict[str, str]:
+    """
+    Save results using standardized file names.
+    
+    Args:
+        results: Results dictionary to save
+        output_dir: Output directory path
+        analysis_type: Type of analysis for summary
+        
+    Returns:
+        Dictionary of saved file paths
+    """
+    saved_files = {}
+    
+    # Save results.json
+    results_file = output_dir / "results.json"
+    with open(results_file, 'w', encoding='utf-8', newline='\n') as f:
+        json.dump(results, f, indent=2, default=str)
+    saved_files['results'] = str(results_file)
+    
+    # Save summary.txt if analysis_type provided
+    if analysis_type:
+        summary_file = output_dir / "summary.txt"
+        with open(summary_file, 'w') as f:
+            f.write(f"Analysis Summary: {analysis_type}\n")
+            f.write(f"Timestamp: {datetime.now().isoformat()}\n")
+            f.write(f"Total Records: {results.get('total_records', 'N/A')}\n")
+            
+            if 'performance' in results:
+                perf = results['performance']
+                f.write(f"R² Score: {perf.get('r2_score', 'N/A')}\n")
+                f.write(f"RMSE: {perf.get('rmse', 'N/A')}\n")
+            
+            f.write(f"Files Generated: results.json, dashboard.png, summary.txt\n")
+        saved_files['summary'] = str(summary_file)
+    
+    return saved_files
 
 
 def setup_logging(logging_config: Dict[str, Any]) -> None:

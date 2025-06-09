@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-Daily Binned Analysis: 14 Subsets (Days 1-14)
+Days Binned Analysis: 14 Subsets (Days 1-14)
 
-Analyzes reimbursement data by binning into 14 daily subsets and applying:
+Analyzes reimbursement data by binning into 14 days subsets and applying:
 1. Linear formula fitting: A*Days + B*Miles + C*Receipts + D for each day
 2. Polynomial feature analysis
 3. Day-by-day pattern discovery
@@ -29,8 +29,8 @@ import warnings
 warnings.filterwarnings('ignore')
 
 
-class DailyBinnedAnalyzer:
-    """Daily binned analysis for days 1-14."""
+class DaysBinnedAnalyzer:
+    """Days binned analysis for days 1-14."""
     
     def __init__(self, max_days=14):
         """Initialize with maximum days to analyze."""
@@ -542,13 +542,13 @@ class DailyBinnedAnalyzer:
                      fontsize=10, verticalalignment='top', fontfamily='monospace')
         
         plt.tight_layout()
-        plt.savefig(Path(output_dir) / 'daily_analysis_dashboard.png', 
+        plt.savefig(Path(output_dir) / 'dashboard.png', 
                    dpi=100, bbox_inches='tight')
         plt.close()
         
-        self.analysis_results['visualizations'].append('daily_analysis_dashboard.png')
+        self.analysis_results['visualizations'].append('dashboard.png')
         
-        return str(Path(output_dir) / 'daily_analysis_dashboard.png')
+        return str(Path(output_dir) / 'dashboard.png')
     
     def print_daily_results(self):
         """Print comprehensive daily analysis results."""
@@ -614,23 +614,36 @@ class DailyBinnedAnalyzer:
 
 
 def main():
-    parser = argparse.ArgumentParser(description='Daily Binned Analysis (Days 1-14)')
+    parser = argparse.ArgumentParser(description='Days Binned Analysis (Days 1-14)')
     parser.add_argument('--csv', default='public.csv', help='Input CSV file (default: public.csv)')
-    parser.add_argument('--output-dir', default='outputs/daily_analysis', 
-                       help='Output directory')
+    parser.add_argument('--output-dir', default=None, 
+                       help='Output directory (auto-generated if not specified)')
     parser.add_argument('--max-days', type=int, default=14,
                        help='Maximum days to analyze (default: 14)')
+    parser.add_argument('--legacy', action='store_true',
+                       help='Use legacy timestamped directory format')
     
     args = parser.parse_args()
     
-    print("Daily Binned Analysis (Days 1-14)")
+    print("Days Binned Analysis (Days 1-14)")
     print("=" * 50)
     
-    # Create output directory
-    Path(args.output_dir).mkdir(parents=True, exist_ok=True)
+    # Create output directory with standardized naming
+    if args.output_dir:
+        output_dir = Path(args.output_dir)
+        output_dir.mkdir(parents=True, exist_ok=True)
+    else:
+        from core.utils import create_organized_output_dir
+        output_dir = create_organized_output_dir(
+            analysis_type="daily",
+            legacy=args.legacy,
+            max_days=args.max_days
+        )
+    
+    print(f"Output directory: {output_dir}")
     
     # Initialize analyzer
-    analyzer = DailyBinnedAnalyzer(args.max_days)
+    analyzer = DaysBinnedAnalyzer(args.max_days)
     
     # Load and prepare data
     df = analyzer.load_and_prepare_data(args.csv)
@@ -642,20 +655,22 @@ def main():
     analyzer.compare_daily_patterns()
     
     # Create visualizations
-    viz_file = analyzer.create_daily_visualizations(df, args.output_dir)
+    viz_file = analyzer.create_daily_visualizations(df, output_dir)
     print(f"Daily visualization saved to: {viz_file}")
     
     # Print results
     analyzer.print_daily_results()
     
-    # Generate and save report
+    # Generate and save report with standardized naming
     report = analyzer.generate_daily_report()
     
-    output_file = Path(args.output_dir) / 'daily_analysis_results.json'
-    with open(output_file, 'w', encoding='utf-8', newline='\n') as f:
-        json.dump(report, f, indent=2, default=str)
+    # Use standardized file saving
+    from core.utils import save_standardized_results
+    saved_files = save_standardized_results(report, output_dir, "daily")
     
-    print(f"\nDaily analysis results saved to: {output_file}")
+    print(f"\nDaily analysis results saved to: {saved_files['results']}")
+    if 'summary' in saved_files:
+        print(f"Summary saved to: {saved_files['summary']}")
     
     return analyzer, df, report
 
